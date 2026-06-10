@@ -568,6 +568,103 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
   font-size: 0.95rem;
 }
 
+.booking-calendar {
+  background: var(--color-light);
+  border-radius: 14px;
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.booking-calendar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.booking-calendar__title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--color-dark);
+  text-transform: capitalize;
+}
+
+.booking-calendar__nav {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--color-primary-dark);
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.booking-calendar__nav:hover {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.booking-calendar__nav:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.booking-calendar__weekdays,
+.booking-calendar__days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.3rem;
+}
+
+.booking-calendar__weekdays span {
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  padding-bottom: 0.4rem;
+}
+
+.booking-calendar__day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 10px;
+  background: #fff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.booking-calendar__day:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.booking-calendar__day.active {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.booking-calendar__day.disabled,
+.booking-calendar__day.empty {
+  background: transparent;
+  color: var(--color-text);
+  opacity: 0.25;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .booking-form {
   display: flex;
   flex-direction: column;

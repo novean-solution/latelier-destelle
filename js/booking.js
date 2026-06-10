@@ -46,39 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  const dateInput = document.getElementById('bookingDate');
-  dateInput.setAttribute('min', getParisDateString());
-  dateInput.addEventListener('change', () => {
-    const value = dateInput.value;
-    if (!value) return;
-
-    if (value < getParisDateString()) {
-      showDateError('Cette date est passée. Merci de choisir une date à venir.');
-      dateInput.value = '';
-      bookingState.date = null;
-      bookingState.time = null;
-      document.getElementById('bookingSlots').innerHTML = '';
-      updateNextButton();
-      return;
-    }
-
-    const day = new Date(value + 'T00:00:00').getDay();
-    if (day === 0 || day === 6) {
-      showDateError('L\'institut est fermé le week-end. Merci de choisir un jour entre lundi et vendredi.');
-      dateInput.value = '';
-      bookingState.date = null;
-      bookingState.time = null;
-      document.getElementById('bookingSlots').innerHTML = '';
-      updateNextButton();
-      return;
-    }
-
-    hideDateError();
-    bookingState.date = value;
-    bookingState.time = null;
-    loadSlots(value);
-    updateNextButton();
-  });
+  initCalendar();
 
   document.getElementById('bookingPrevBtn').addEventListener('click', () => goToStep(bookingState.step - 1));
   document.getElementById('bookingNextBtn').addEventListener('click', () => {
@@ -93,10 +61,116 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.getElementById('bookingConfirmBtn').addEventListener('click', submitBooking);
 
-  ['bookingName', 'bookingPhone'].forEach(id => {
-    document.getElementById(id).addEventListener('input', updateNextButton);
+  document.getElementById('bookingName').addEventListener('input', updateNextButton);
+  document.getElementById('bookingPhone').addEventListener('input', () => {
+    validatePhone();
+    updateNextButton();
   });
 });
+
+const PHONE_REGEX = /^0[1-9](\s?\d{2}){4}$/;
+
+function validatePhone() {
+  const input = document.getElementById('bookingPhone');
+  const error = document.getElementById('bookingPhoneError');
+  const value = input.value.trim();
+
+  if (!value) {
+    error.style.display = 'none';
+    return false;
+  }
+
+  if (!PHONE_REGEX.test(value)) {
+    error.textContent = 'Numéro invalide. Format attendu : 06 12 34 56 78';
+    error.style.display = 'block';
+    return false;
+  }
+
+  error.style.display = 'none';
+  return true;
+}
+
+let calendarMonth, calendarYear;
+
+function initCalendar() {
+  const now = new Date(getParisDateString() + 'T00:00:00');
+  calendarMonth = now.getMonth();
+  calendarYear = now.getFullYear();
+
+  document.getElementById('bookingCalPrev').addEventListener('click', () => {
+    calendarMonth--;
+    if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
+    renderCalendar();
+  });
+  document.getElementById('bookingCalNext').addEventListener('click', () => {
+    calendarMonth++;
+    if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
+    renderCalendar();
+  });
+
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const title = document.getElementById('bookingCalTitle');
+  const daysContainer = document.getElementById('bookingCalDays');
+  const prevBtn = document.getElementById('bookingCalPrev');
+
+  const monthDate = new Date(calendarYear, calendarMonth, 1);
+  title.textContent = monthDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+
+  const todayStr = getParisDateString();
+  const todayDate = new Date(todayStr + 'T00:00:00');
+  prevBtn.disabled = (calendarYear === todayDate.getFullYear() && calendarMonth === todayDate.getMonth());
+
+  const firstDayIndex = (new Date(calendarYear, calendarMonth, 1).getDay() + 6) % 7; // lundi = 0
+  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+
+  daysContainer.innerHTML = '';
+
+  for (let i = 0; i < firstDayIndex; i++) {
+    const empty = document.createElement('span');
+    empty.className = 'booking-calendar__day empty';
+    daysContainer.appendChild(empty);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(calendarYear, calendarMonth, d);
+    const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const dayOfWeek = date.getDay(); // 0 = dimanche, 6 = samedi
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    const isPast = dateStr < todayStr;
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'booking-calendar__day';
+    btn.textContent = d;
+
+    if (isWeekend || isPast) {
+      btn.classList.add('disabled');
+      btn.disabled = true;
+      btn.setAttribute('aria-disabled', 'true');
+    } else {
+      btn.addEventListener('click', () => selectDate(dateStr, btn));
+    }
+
+    if (dateStr === bookingState.date) {
+      btn.classList.add('active');
+    }
+
+    daysContainer.appendChild(btn);
+  }
+}
+
+function selectDate(dateStr, btn) {
+  document.querySelectorAll('.booking-calendar__day').forEach(d => d.classList.remove('active'));
+  btn.classList.add('active');
+  hideDateError();
+  bookingState.date = dateStr;
+  bookingState.time = null;
+  loadSlots(dateStr);
+  updateNextButton();
+}
 
 function renderServices(category) {
   const container = document.getElementById('bookingServices');
@@ -202,7 +276,7 @@ function updateNextButton() {
   let valid = true;
   if (bookingState.step === 1) valid = !!bookingState.service;
   if (bookingState.step === 2) valid = !!(bookingState.date && bookingState.time);
-  if (bookingState.step === 3) valid = !!(document.getElementById('bookingName').value.trim() && document.getElementById('bookingPhone').value.trim());
+  if (bookingState.step === 3) valid = !!(document.getElementById('bookingName').value.trim()) && PHONE_REGEX.test(document.getElementById('bookingPhone').value.trim());
   nextBtn.disabled = !valid;
 }
 

@@ -213,7 +213,17 @@
       <!-- Étape 2 : date et heure -->
       <div class="booking-panel" data-step="2">
         <h3>2. Choisissez une date et un horaire</h3>
-        <input type="date" id="bookingDate" class="booking-date">
+        <div class="booking-calendar" id="bookingCalendar">
+          <div class="booking-calendar__header">
+            <button type="button" class="booking-calendar__nav" id="bookingCalPrev" aria-label="Mois précédent">‹</button>
+            <span class="booking-calendar__title" id="bookingCalTitle"></span>
+            <button type="button" class="booking-calendar__nav" id="bookingCalNext" aria-label="Mois suivant">›</button>
+          </div>
+          <div class="booking-calendar__weekdays">
+            <span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span>
+          </div>
+          <div class="booking-calendar__days" id="bookingCalDays"></div>
+        </div>
         <p class="booking-error" id="bookingDateError" style="display:none;"></p>
         <div class="booking-slots" id="bookingSlots">
           <p class="booking-hint">Sélectionnez une date pour voir les créneaux disponibles.</p>
@@ -231,6 +241,7 @@
           <div class="form-row">
             <label for="bookingPhone">Téléphone *</label>
             <input type="tel" id="bookingPhone" placeholder="06 12 34 56 78">
+            <p class="booking-error" id="bookingPhoneError" style="display:none;"></p>
           </div>
           <div class="form-row">
             <label for="bookingEmail">Email (optionnel)</label>
