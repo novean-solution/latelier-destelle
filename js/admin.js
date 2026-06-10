@@ -2,14 +2,6 @@ const BOOKING_API = 'https://latelier-destelle-api.contactnovean.workers.dev';
 const STATUS_LABELS = { pending: 'En attente', confirmed: 'Confirmé', cancelled: 'Annulé' };
 
 const SERVICES = {
-  onglerie: [
-    { name: 'Manucure - Rallongement', duration: 90 },
-    { name: 'Manucure - Remplissage gel/renfort', duration: 75 },
-    { name: 'Manucure - Semi permanent', duration: 60 },
-    { name: 'Pédicure - Semi permanent', duration: 60 },
-    { name: 'Formule semi permanent mains + pieds', duration: 90 },
-    { name: 'Formule gel/renfort + semi permanent pieds', duration: 105 },
-  ],
   thermolyse: [
     { name: 'Rendez-vous d\'informations', duration: 30 },
     { name: 'Séance de 15 minutes', duration: 30 },
@@ -203,18 +195,14 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
 
 /* ===== Modal nouveau rendez-vous ===== */
 const appointmentModal = document.getElementById('appointmentModal');
-const aptCategory = document.getElementById('aptCategory');
 const aptService = document.getElementById('aptService');
 const appointmentModalError = document.getElementById('appointmentModalError');
 
 function populateServiceOptions() {
-  const category = aptCategory.value;
-  aptService.innerHTML = SERVICES[category]
+  aptService.innerHTML = SERVICES.thermolyse
     .map(s => `<option value="${escapeHtml(s.name)}" data-duration="${s.duration}">${escapeHtml(s.name)} (${s.duration} min)</option>`)
     .join('');
 }
-
-aptCategory.addEventListener('change', populateServiceOptions);
 
 document.getElementById('newAppointmentBtn').addEventListener('click', async () => {
   populateServiceOptions();
@@ -285,7 +273,7 @@ document.getElementById('appointmentModalCancel').addEventListener('click', () =
 });
 
 document.getElementById('appointmentModalSave').addEventListener('click', async () => {
-  const category = aptCategory.value;
+  const category = 'thermolyse';
   const selectedOption = aptService.options[aptService.selectedIndex];
   const service = selectedOption.value;
   const duration = Number(selectedOption.dataset.duration);

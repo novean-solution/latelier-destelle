@@ -2,14 +2,6 @@
 const BOOKING_API = 'https://latelier-destelle-api.contactnovean.workers.dev';
 
 const SERVICES = {
-  onglerie: [
-    { name: 'Manucure - Rallongement', duration: 90, price: '65 €' },
-    { name: 'Manucure - Remplissage gel/renfort', duration: 75, price: '55 €' },
-    { name: 'Manucure - Semi permanent', duration: 60, price: '40 €' },
-    { name: 'Pédicure - Semi permanent', duration: 60, price: '40 €' },
-    { name: 'Formule semi permanent mains + pieds', duration: 90, price: '65 €' },
-    { name: 'Formule gel/renfort + semi permanent pieds', duration: 105, price: '80 €' },
-  ],
   thermolyse: [
     { name: 'Rendez-vous d\'informations', duration: 30, price: '20 €' },
     { name: 'Séance de 15 minutes', duration: 30, price: '40 €' },
@@ -23,7 +15,7 @@ const SERVICES = {
 
 const bookingState = {
   step: 1,
-  category: 'onglerie',
+  category: 'thermolyse',
   service: null,
   date: null,
   time: null,
@@ -33,18 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const section = document.getElementById('rendezvous');
   if (!section) return;
 
-  renderServices('onglerie');
-
-  document.querySelectorAll('.booking-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.booking-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      bookingState.category = tab.dataset.cat;
-      bookingState.service = null;
-      renderServices(tab.dataset.cat);
-      updateNextButton();
-    });
-  });
+  renderServices('thermolyse');
 
   initCalendar();
 
