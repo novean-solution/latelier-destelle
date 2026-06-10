@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mon espace client | L'Atelier d'Estelle Institut</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="header" id="header">
+  <div class="container header__inner">
+    <a href="index.html" class="logo">L'atelier <span>d'Estelle</span><small>institut</small></a>
+    <nav class="nav" id="nav">
+      <a href="index.html">Retour au site</a>
+    </nav>
+    <button class="btn btn--ghost header__phone" id="logoutBtn" style="display:none;">Déconnexion</button>
+  </div>
+</header>
+
+<main class="account">
+
+  <!-- Connexion -->
+  <div class="account__box" id="loginBox">
+    <h1>Mon espace client</h1>
+    <p class="hint">Connectez-vous avec votre adresse email pour gérer vos rendez-vous.</p>
+
+    <div id="emailStep">
+      <div class="form-row">
+        <label for="loginEmail">Adresse email</label>
+        <input type="email" id="loginEmail" placeholder="vous@exemple.com">
+      </div>
+      <button class="btn btn--primary" id="sendCodeBtn">Recevoir mon code de connexion</button>
+      <div class="account-error" id="emailError"></div>
+    </div>
+
+    <div id="codeStep" style="display:none;">
+      <p class="hint">Un code à 6 chiffres a été envoyé à <strong id="codeEmailDisplay"></strong>. Il est valable 10 minutes.</p>
+      <div class="form-row">
+        <label for="loginCode">Code de connexion</label>
+        <input type="text" id="loginCode" inputmode="numeric" maxlength="6" placeholder="123456">
+      </div>
+      <button class="btn btn--primary" id="verifyCodeBtn">Se connecter</button>
+      <div class="account-error" id="codeError"></div>
+    </div>
+  </div>
+
+  <!-- Espace connecté -->
+  <div id="app" style="display:none;">
+    <div class="account__header">
+      <h1>Mon espace</h1>
+    </div>
+
+    <div class="account__tabs">
+      <button class="account__tab active" data-tab="appointments">Mes rendez-vous</button>
+      <button class="account__tab" data-tab="booking">Prendre rendez-vous</button>
+      <button class="account__tab" data-tab="profile">Mon profil</button>
+    </div>
+
+    <!-- Mes rendez-vous -->
+    <div class="account__view active" id="viewAppointments">
+      <div id="appointmentsList"></div>
+    </div>
+
+    <!-- Prendre rendez-vous -->
+    <div class="account__view" id="viewBooking">
+      <div class="booking-card" style="box-shadow:none; padding:0;">
+        <div class="booking-steps">
+          <span class="booking-step-dot active" data-step="1">1</span>
+          <span class="booking-step-line"></span>
+          <span class="booking-step-dot" data-step="2">2</span>
+          <span class="booking-step-line"></span>
+          <span class="booking-step-dot" data-step="3">3</span>
+        </div>
+
+        <div class="booking-panel active" data-step="1">
+          <h3>1. Choisissez une prestation</h3>
+          <div class="booking-services" id="bookingServices"></div>
+        </div>
+
+        <div class="booking-panel" data-step="2">
+          <h3>2. Choisissez une date et un horaire</h3>
+          <div class="booking-calendar" id="bookingCalendar">
+            <div class="booking-calendar__header">
+              <button type="button" class="booking-calendar__nav" id="bookingCalPrev" aria-label="Mois précédent">‹</button>
+              <span class="booking-calendar__title" id="bookingCalTitle"></span>
+              <button type="button" class="booking-calendar__nav" id="bookingCalNext" aria-label="Mois suivant">›</button>
+            </div>
+            <div class="booking-calendar__weekdays">
+              <span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span>
+            </div>
+            <div class="booking-calendar__days" id="bookingCalDays"></div>
+          </div>
+          <div class="booking-slots" id="bookingSlots">
+            <p class="booking-hint">Sélectionnez une date pour voir les créneaux disponibles.</p>
+          </div>
+        </div>
+
+        <div class="booking-panel" data-step="3">
+          <h3>3. Confirmation</h3>
+          <div class="booking-form">
+            <div class="form-row">
+              <label for="bookingNotes">Message (optionnel)</label>
+              <textarea id="bookingNotes" rows="3" placeholder="Précisions sur votre demande..."></textarea>
+            </div>
+          </div>
+          <div class="booking-summary" id="bookingSummary"></div>
+          <p class="booking-success" id="bookingSuccess" style="display:none;">
+            ✅ Votre demande de rendez-vous a bien été envoyée ! Estelle vous confirmera votre créneau rapidement.
+          </p>
+          <p class="booking-error" id="bookingError" style="display:none;"></p>
+        </div>
+
+        <div class="booking-actions">
+          <button class="btn btn--ghost" id="bookingPrevBtn" style="display:none;">Précédent</button>
+          <button class="btn btn--primary" id="bookingNextBtn" disabled>Suivant</button>
+          <button class="btn btn--primary" id="bookingConfirmBtn" style="display:none;">Confirmer le rendez-vous</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mon profil -->
+    <div class="account__view" id="viewProfile">
+      <div class="account__box">
+        <h2>Mes informations</h2>
+        <div class="form-row">
+          <label for="profileEmail">Email</label>
+          <input type="email" id="profileEmail" disabled>
+        </div>
+        <div class="form-row">
+          <label for="profileName">Nom et prénom</label>
+          <input type="text" id="profileName" placeholder="Votre nom">
+        </div>
+        <div class="form-row">
+          <label for="profilePhone">Téléphone</label>
+          <input type="tel" id="profilePhone" placeholder="06 12 34 56 78">
+        </div>
+        <button class="btn btn--primary" id="saveProfileBtn">Enregistrer</button>
+        <div class="account-error" id="profileError"></div>
+        <div class="account-success" id="profileSuccess">Informations enregistrées.</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer class="footer">
+  <div class="container footer__inner">
+    <p>&copy; <span id="year"></span> L'atelier d'Estelle institut — Tous droits réservés</p>
+    <p class="footer__credit">Site réalisé par Novean</p>
+  </div>
+</footer>
+
+<script src="js/compte.js"></script>
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>

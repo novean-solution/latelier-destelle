@@ -801,3 +801,138 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
   .booking-card { padding: 1.25rem; border-radius: 18px; }
   .booking-step-line { max-width: 30px; }
 }
+
+/* ===== Espace client ===== */
+.account {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 140px 20px 80px;
+  min-height: 70vh;
+}
+
+.account__box {
+  background: #fff;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 10px 40px rgba(58, 44, 46, 0.08);
+  margin-bottom: 1.5rem;
+}
+
+.account__box h1, .account__box h2 {
+  font-family: var(--font-heading);
+  color: var(--color-dark);
+  margin-bottom: 1rem;
+}
+
+.account__box p.hint { font-size: 0.9rem; opacity: 0.75; margin-bottom: 1rem; }
+
+.account input, .account textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-light);
+  border-radius: 12px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+}
+
+.account .form-row { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.9rem; }
+.account .form-row label { font-size: 0.85rem; font-weight: 600; color: var(--color-dark); }
+.account .form-row-2 { display: flex; gap: 0.75rem; }
+.account .form-row-2 > div { flex: 1; }
+
+.account__tabs {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.account__tab {
+  padding: 0.6rem 1.3rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-light);
+  background: #fff;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.account__tab.active { background: var(--color-dark); color: #fff; border-color: var(--color-dark); }
+
+.account__view { display: none; }
+.account__view.active { display: block; animation: fadeIn 0.3s ease; }
+
+.account__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.account__header h1 { margin-bottom: 0; }
+
+.apt-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.25rem;
+  box-shadow: 0 4px 16px rgba(58, 44, 46, 0.06);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  border-left: 4px solid var(--color-light);
+  margin-bottom: 0.85rem;
+}
+
+.apt-card.status-confirmed { border-left-color: #6fbf73; }
+.apt-card.status-cancelled { border-left-color: #c0392b; opacity: 0.6; }
+.apt-card.status-pending { border-left-color: #e0a96d; }
+.apt-main { flex: 1; min-width: 200px; }
+.apt-date { font-weight: 700; color: var(--color-dark); font-size: 1.05rem; }
+.apt-service { color: var(--color-primary); font-weight: 600; margin-top: 0.2rem; }
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
+
+.status-badge.pending { background: #fbeede; color: #b9762f; }
+.status-badge.confirmed { background: #e6f4ea; color: #1e7d3a; }
+.status-badge.cancelled { background: #fbe7e9; color: #c0392b; }
+
+.apt-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.apt-actions button {
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-light);
+  background: #fff;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.85rem;
+  color: var(--color-text);
+}
+.apt-actions button:hover { background: var(--color-light); }
+.apt-actions button.danger:hover { background: #fbe7e9; color: #c0392b; }
+
+.empty-msg { text-align: center; padding: 2.5rem 1rem; opacity: 0.6; }
+
+.account-error { color: #c0392b; font-size: 0.9rem; margin-top: 0.5rem; display: none; }
+.account-success { color: #1e7d3a; font-size: 0.9rem; margin-top: 0.5rem; display: none; }
+
+.reschedule-box {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-light);
+  width: 100%;
+  display: none;
+}
+.reschedule-box.active { display: block; }
