@@ -47,12 +47,36 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   const dateInput = document.getElementById('bookingDate');
-  const today = new Date().toISOString().split('T')[0];
-  dateInput.setAttribute('min', today);
+  dateInput.setAttribute('min', getParisDateString());
   dateInput.addEventListener('change', () => {
-    bookingState.date = dateInput.value;
+    const value = dateInput.value;
+    if (!value) return;
+
+    if (value < getParisDateString()) {
+      showDateError('Cette date est passée. Merci de choisir une date à venir.');
+      dateInput.value = '';
+      bookingState.date = null;
+      bookingState.time = null;
+      document.getElementById('bookingSlots').innerHTML = '';
+      updateNextButton();
+      return;
+    }
+
+    const day = new Date(value + 'T00:00:00').getDay();
+    if (day === 0 || day === 6) {
+      showDateError('L\'institut est fermé le week-end. Merci de choisir un jour entre lundi et vendredi.');
+      dateInput.value = '';
+      bookingState.date = null;
+      bookingState.time = null;
+      document.getElementById('bookingSlots').innerHTML = '';
+      updateNextButton();
+      return;
+    }
+
+    hideDateError();
+    bookingState.date = value;
     bookingState.time = null;
-    loadSlots(dateInput.value);
+    loadSlots(value);
     updateNextButton();
   });
 
@@ -93,6 +117,29 @@ function renderServices(category) {
   });
 }
 
+function getParisDateString(date) {
+  return new Intl.DateTimeFormat('fr-CA', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit' })
+    .format(date || new Date());
+}
+
+function getParisTimeString(date) {
+  return new Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', hour12: false })
+    .format(date || new Date());
+}
+
+function showDateError(message) {
+  const el = document.getElementById('bookingDateError');
+  if (!el) return;
+  el.textContent = message;
+  el.style.display = 'block';
+}
+
+function hideDateError() {
+  const el = document.getElementById('bookingDateError');
+  if (!el) return;
+  el.style.display = 'none';
+}
+
 async function loadSlots(date) {
   const container = document.getElementById('bookingSlots');
   container.innerHTML = '<p class="booking-hint">Chargement des créneaux...</p>';
@@ -101,13 +148,20 @@ async function loadSlots(date) {
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Erreur');
 
-    if (data.slots.length === 0) {
-      container.innerHTML = '<p class="booking-hint">Aucun créneau disponible ce jour-là (institut ouvert du lundi au vendredi).</p>';
+    let slots = data.slots;
+
+    if (date === getParisDateString()) {
+      const nowTime = getParisTimeString();
+      slots = slots.filter(slot => slot > nowTime);
+    }
+
+    if (slots.length === 0) {
+      container.innerHTML = '<p class="booking-hint">Aucun créneau disponible ce jour-là (institut ouvert du lundi au vendredi, 7h-20h).</p>';
       return;
     }
 
     container.innerHTML = '';
-    data.slots.forEach(slot => {
+    slots.forEach(slot => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'booking-slot';
