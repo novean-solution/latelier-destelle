@@ -372,9 +372,11 @@ async function openClientDetail(id) {
 
     currentClientId = id;
     document.getElementById('clientDetailName').textContent = data.client.name || '(sans nom)';
-    document.getElementById('clientDetailPhone').textContent = '📞 ' + data.client.phone;
-    document.getElementById('clientDetailEmail').textContent = data.client.email ? '✉️ ' + data.client.email : '';
+    document.getElementById('clientEditName').value = data.client.name || '';
+    document.getElementById('clientEditPhone').value = data.client.phone || '';
+    document.getElementById('clientEditEmail').value = data.client.email || '';
     document.getElementById('clientNotes').value = data.client.notes || '';
+    document.getElementById('clientDetailError').style.display = 'none';
 
     const aptList = document.getElementById('clientAppointmentsList');
     if (data.appointments.length === 0) {
@@ -397,13 +399,51 @@ document.getElementById('backToClients').addEventListener('click', () => {
 
 document.getElementById('saveNotesBtn').addEventListener('click', async () => {
   if (!currentClientId) return;
+  const errorEl = document.getElementById('clientDetailError');
+  errorEl.style.display = 'none';
+
+  const name = document.getElementById('clientEditName').value.trim();
+  const phone = document.getElementById('clientEditPhone').value.trim();
+  const email = document.getElementById('clientEditEmail').value.trim();
   const notes = document.getElementById('clientNotes').value.trim();
+
+  if (!name || !phone) {
+    errorEl.textContent = 'Le nom et le téléphone sont obligatoires.';
+    errorEl.style.display = 'block';
+    return;
+  }
+  if (!PHONE_REGEX.test(phone)) {
+    errorEl.textContent = 'Numéro invalide. Format attendu : 06 12 34 56 78';
+    errorEl.style.display = 'block';
+    return;
+  }
+  if (email && !EMAIL_REGEX.test(email)) {
+    errorEl.textContent = 'Adresse email invalide.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
   try {
     const data = await apiFetch(`/api/admin/clients/${currentClientId}`, {
       method: 'PATCH',
-      body: JSON.stringify({ notes }),
+      body: JSON.stringify({ name, phone, email, notes }),
     });
     if (!data.success) throw new Error(data.error);
+    document.getElementById('clientDetailName').textContent = name || '(sans nom)';
+  } catch (e) {
+    errorEl.textContent = 'Erreur : ' + e.message;
+    errorEl.style.display = 'block';
+  }
+});
+
+document.getElementById('deleteClientBtn').addEventListener('click', async () => {
+  if (!currentClientId) return;
+  if (!confirm('Supprimer définitivement ce client et son historique ?')) return;
+  try {
+    const data = await apiFetch(`/api/admin/clients/${currentClientId}`, { method: 'DELETE' });
+    if (!data.success) throw new Error(data.error);
+    switchView('viewClients');
+    loadClients();
   } catch (e) {
     alert('Erreur : ' + e.message);
   }

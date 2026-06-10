@@ -303,6 +303,14 @@ async function handleRequest(request, env) {
       const phone = body.phone !== undefined ? sanitize(body.phone) : existing.phone;
       const email = body.email !== undefined ? sanitize(body.email) : existing.email;
       const notes = body.notes !== undefined ? sanitize(body.notes) : existing.notes;
+
+      if (phone !== existing.phone) {
+        const conflict = await env.DB.prepare('SELECT id FROM clients WHERE phone = ? AND id != ?').bind(phone, id).first();
+        if (conflict) {
+          return Response.json({ success: false, error: 'Un autre client utilise déjà ce numéro' }, { status: 409, headers });
+        }
+      }
+
       await env.DB.prepare('UPDATE clients SET name = ?, phone = ?, email = ?, notes = ? WHERE id = ?')
         .bind(name, phone, email, notes, id).run();
       return Response.json({ success: true }, { headers });

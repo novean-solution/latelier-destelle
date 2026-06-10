@@ -379,13 +379,27 @@
     <span class="back-link" id="backToClients">← Retour aux clients</span>
     <div class="client-detail__header">
       <h2 id="clientDetailName"></h2>
-      <div class="client-detail__meta" id="clientDetailPhone"></div>
-      <div class="client-detail__meta" id="clientDetailEmail"></div>
+      <div class="form-row">
+        <label for="clientEditName">Nom</label>
+        <input type="text" id="clientEditName" placeholder="Nom et prénom">
+      </div>
+      <div class="form-row-2">
+        <div>
+          <label for="clientEditPhone">Téléphone</label>
+          <input type="tel" id="clientEditPhone" placeholder="06 12 34 56 78">
+        </div>
+        <div>
+          <label for="clientEditEmail">Email (optionnel)</label>
+          <input type="email" id="clientEditEmail" placeholder="vous@exemple.com">
+        </div>
+      </div>
       <div class="client-notes">
         <label for="clientNotes"><strong>Notes personnelles</strong></label>
         <textarea id="clientNotes" placeholder="Préférences, allergies, anecdotes à se rappeler..."></textarea>
+        <div class="modal-error" id="clientDetailError"></div>
         <div class="modal-actions">
-          <button class="save-btn" id="saveNotesBtn" style="flex:none; padding:0.6rem 1.4rem;">Enregistrer les notes</button>
+          <button class="cancel-btn" id="deleteClientBtn" style="flex:none; padding:0.6rem 1.4rem;">Supprimer le client</button>
+          <button class="save-btn" id="saveNotesBtn" style="flex:none; padding:0.6rem 1.4rem;">Enregistrer</button>
         </div>
       </div>
     </div>
