@@ -1,4 +1,5 @@
 const BOOKING_API = 'https://latelier-destelle-api.contactnovean.workers.dev';
+const STATUS_LABELS = { pending: 'En attente', confirmed: 'Confirmé', cancelled: 'Annulé' };
 let currentFilter = 'all';
 let appointments = [];
 
@@ -90,7 +91,7 @@ function render() {
         <div class="apt-service">${escapeHtml(apt.service)} (${apt.duration} min)</div>
         <div class="apt-client">${escapeHtml(apt.clientName)} · ${escapeHtml(apt.clientPhone)}${apt.clientEmail ? ' · ' + escapeHtml(apt.clientEmail) : ''}</div>
         ${apt.notes ? `<div class="apt-notes">${escapeHtml(apt.notes)}</div>` : ''}
-        <div style="margin-top:0.5rem;"><span class="status-badge ${apt.status}">${apt.status}</span></div>
+        <div style="margin-top:0.5rem;"><span class="status-badge ${apt.status}">${STATUS_LABELS[apt.status] || apt.status}</span></div>
       </div>
       <div class="apt-actions">
         ${apt.status !== 'confirmed' ? '<button data-action="confirm">Confirmer</button>' : ''}
