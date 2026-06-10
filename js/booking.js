@@ -66,9 +66,34 @@ document.addEventListener('DOMContentLoaded', () => {
     validatePhone();
     updateNextButton();
   });
+  document.getElementById('bookingEmail').addEventListener('input', () => {
+    validateEmail();
+    updateNextButton();
+  });
 });
 
 const PHONE_REGEX = /^0[1-9](\s?\d{2}){4}$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validateEmail() {
+  const input = document.getElementById('bookingEmail');
+  const error = document.getElementById('bookingEmailError');
+  const value = input.value.trim();
+
+  if (!value) {
+    error.style.display = 'none';
+    return true;
+  }
+
+  if (!EMAIL_REGEX.test(value)) {
+    error.textContent = 'Adresse email invalide.';
+    error.style.display = 'block';
+    return false;
+  }
+
+  error.style.display = 'none';
+  return true;
+}
 
 function validatePhone() {
   const input = document.getElementById('bookingPhone');
@@ -276,7 +301,11 @@ function updateNextButton() {
   let valid = true;
   if (bookingState.step === 1) valid = !!bookingState.service;
   if (bookingState.step === 2) valid = !!(bookingState.date && bookingState.time);
-  if (bookingState.step === 3) valid = !!(document.getElementById('bookingName').value.trim()) && PHONE_REGEX.test(document.getElementById('bookingPhone').value.trim());
+  if (bookingState.step === 3) {
+    valid = !!(document.getElementById('bookingName').value.trim())
+      && PHONE_REGEX.test(document.getElementById('bookingPhone').value.trim())
+      && validateEmail();
+  }
   nextBtn.disabled = !valid;
 }
 
