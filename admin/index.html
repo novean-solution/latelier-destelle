@@ -271,6 +271,32 @@
   .modal-actions .cancel-btn:hover { background: #f0d3dc; }
   .modal-error { color: #c0392b; font-size: 0.9rem; margin-top: 0.5rem; display: none; }
 
+  .form-row { position: relative; }
+  .client-suggestions {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #f7e4ea;
+    border-radius: 10px;
+    margin-top: 0.25rem;
+    max-height: 180px;
+    overflow-y: auto;
+    z-index: 10;
+    box-shadow: 0 8px 24px rgba(58, 44, 46, 0.1);
+  }
+  .client-suggestions.active { display: block; }
+  .client-suggestion {
+    padding: 0.6rem 0.9rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  .client-suggestion:hover { background: #f7e4ea; }
+  .client-suggestion__name { font-weight: 600; color: #3a2c2e; }
+  .client-suggestion__phone { font-size: 0.8rem; opacity: 0.7; }
+
   /* Client detail */
   .back-link {
     display: inline-block;
@@ -402,7 +428,8 @@
     </div>
     <div class="form-row">
       <label for="aptClientName">Nom du client</label>
-      <input type="text" id="aptClientName" placeholder="Nom et prénom">
+      <input type="text" id="aptClientName" placeholder="Nom et prénom" autocomplete="off">
+      <div class="client-suggestions" id="clientSuggestions"></div>
     </div>
     <div class="form-row-2">
       <div>

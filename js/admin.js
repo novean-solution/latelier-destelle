@@ -216,7 +216,7 @@ function populateServiceOptions() {
 
 aptCategory.addEventListener('change', populateServiceOptions);
 
-document.getElementById('newAppointmentBtn').addEventListener('click', () => {
+document.getElementById('newAppointmentBtn').addEventListener('click', async () => {
   populateServiceOptions();
   document.getElementById('aptDate').value = getParisDateString();
   document.getElementById('aptTime').value = '';
@@ -226,7 +226,58 @@ document.getElementById('newAppointmentBtn').addEventListener('click', () => {
   document.getElementById('aptClientEmail').value = '';
   document.getElementById('aptNotes').value = '';
   appointmentModalError.style.display = 'none';
+  hideClientSuggestions();
   appointmentModal.classList.add('active');
+
+  if (clients.length === 0) {
+    try {
+      const data = await apiFetch('/api/admin/clients');
+      if (data.success) clients = data.clients || [];
+    } catch (e) { /* ignore */ }
+  }
+});
+
+/* Autocomplétion client dans le formulaire de rendez-vous */
+const aptClientName = document.getElementById('aptClientName');
+const clientSuggestions = document.getElementById('clientSuggestions');
+
+function hideClientSuggestions() {
+  clientSuggestions.classList.remove('active');
+  clientSuggestions.innerHTML = '';
+}
+
+aptClientName.addEventListener('input', () => {
+  const query = aptClientName.value.trim().toLowerCase();
+  if (!query) return hideClientSuggestions();
+
+  const matches = clients.filter(c => c.name && c.name.toLowerCase().includes(query)).slice(0, 6);
+  if (matches.length === 0) return hideClientSuggestions();
+
+  clientSuggestions.innerHTML = matches.map(c => `
+    <div class="client-suggestion" data-id="${c.id}">
+      <div class="client-suggestion__name">${escapeHtml(c.name)}</div>
+      <div class="client-suggestion__phone">${escapeHtml(c.phone)}${c.email ? ' · ' + escapeHtml(c.email) : ''}</div>
+    </div>
+  `).join('');
+
+  clientSuggestions.querySelectorAll('.client-suggestion').forEach(el => {
+    el.addEventListener('click', () => {
+      const client = clients.find(c => c.id === el.dataset.id);
+      if (!client) return;
+      aptClientName.value = client.name;
+      document.getElementById('aptClientPhone').value = client.phone;
+      document.getElementById('aptClientEmail').value = client.email || '';
+      hideClientSuggestions();
+    });
+  });
+
+  clientSuggestions.classList.add('active');
+});
+
+document.addEventListener('click', e => {
+  if (!clientSuggestions.contains(e.target) && e.target !== aptClientName) {
+    hideClientSuggestions();
+  }
 });
 
 document.getElementById('appointmentModalCancel').addEventListener('click', () => {
