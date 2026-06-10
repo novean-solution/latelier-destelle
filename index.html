@@ -21,6 +21,7 @@
       <a href="#services">Services</a>
       <a href="#tarifs">Tarifs</a>
       <a href="#galerie">Galerie</a>
+      <a href="#rendezvous">Rendez-vous</a>
       <a href="#contact">Contact</a>
     </nav>
     <a href="tel:0619755863" class="btn btn--ghost header__phone">06 19 75 58 63</a>
@@ -38,7 +39,7 @@
     <h1>Bien dans son esprit,<br>bien dans sa peau</h1>
     <p class="hero__text">Telle est la vision qui m'anime au quotidien et que je souhaite vous transmettre. Bienvenue dans mon cocon de douceur, un cadre intimiste pensé pour prendre soin de vous.</p>
     <div class="hero__actions">
-      <a href="tel:0619755863" class="btn btn--primary">Prendre rendez-vous</a>
+      <a href="#rendezvous" class="btn btn--primary">Prendre rendez-vous</a>
       <a href="#services" class="btn btn--outline">Découvrir les services</a>
     </div>
   </div>
@@ -183,6 +184,83 @@
   </div>
 </section>
 
+<section class="rendezvous" id="rendezvous">
+  <div class="container">
+    <p class="section__kicker">Rendez-vous</p>
+    <h2 class="section__title">Réservez votre créneau en ligne</h2>
+
+    <div class="booking-card">
+      <div class="booking-steps">
+        <span class="booking-step-dot active" data-step="1">1</span>
+        <span class="booking-step-line"></span>
+        <span class="booking-step-dot" data-step="2">2</span>
+        <span class="booking-step-line"></span>
+        <span class="booking-step-dot" data-step="3">3</span>
+        <span class="booking-step-line"></span>
+        <span class="booking-step-dot" data-step="4">4</span>
+      </div>
+
+      <!-- Étape 1 : choix du service -->
+      <div class="booking-panel active" data-step="1">
+        <h3>1. Choisissez une prestation</h3>
+        <div class="booking-tabs">
+          <button class="booking-tab active" data-cat="onglerie">Onglerie</button>
+          <button class="booking-tab" data-cat="thermolyse">Thermolyse</button>
+        </div>
+        <div class="booking-services" id="bookingServices"></div>
+      </div>
+
+      <!-- Étape 2 : date et heure -->
+      <div class="booking-panel" data-step="2">
+        <h3>2. Choisissez une date et un horaire</h3>
+        <input type="date" id="bookingDate" class="booking-date">
+        <div class="booking-slots" id="bookingSlots">
+          <p class="booking-hint">Sélectionnez une date pour voir les créneaux disponibles.</p>
+        </div>
+      </div>
+
+      <!-- Étape 3 : coordonnées -->
+      <div class="booking-panel" data-step="3">
+        <h3>3. Vos coordonnées</h3>
+        <div class="booking-form">
+          <div class="form-row">
+            <label for="bookingName">Nom et prénom *</label>
+            <input type="text" id="bookingName" placeholder="Votre nom">
+          </div>
+          <div class="form-row">
+            <label for="bookingPhone">Téléphone *</label>
+            <input type="tel" id="bookingPhone" placeholder="06 12 34 56 78">
+          </div>
+          <div class="form-row">
+            <label for="bookingEmail">Email (optionnel)</label>
+            <input type="email" id="bookingEmail" placeholder="vous@exemple.com">
+          </div>
+          <div class="form-row">
+            <label for="bookingNotes">Message (optionnel)</label>
+            <textarea id="bookingNotes" rows="3" placeholder="Précisions sur votre demande..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Étape 4 : confirmation -->
+      <div class="booking-panel" data-step="4">
+        <h3>4. Confirmation</h3>
+        <div class="booking-summary" id="bookingSummary"></div>
+        <p class="booking-success" id="bookingSuccess" style="display:none;">
+          ✅ Votre demande de rendez-vous a bien été envoyée ! Estelle vous confirmera votre créneau rapidement.
+        </p>
+        <p class="booking-error" id="bookingError" style="display:none;"></p>
+      </div>
+
+      <div class="booking-actions">
+        <button class="btn btn--ghost" id="bookingPrevBtn" style="display:none;">Précédent</button>
+        <button class="btn btn--primary" id="bookingNextBtn" disabled>Suivant</button>
+        <button class="btn btn--primary" id="bookingConfirmBtn" style="display:none;">Confirmer le rendez-vous</button>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="contact" id="contact">
   <div class="container contact__inner">
     <div class="contact__info">
@@ -216,6 +294,7 @@
   </div>
 </footer>
 
+<script src="js/booking.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

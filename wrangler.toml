@@ -1,0 +1,12 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "latelier-destelle-api"
+main = "worker/index.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+ENVIRONMENT = "production"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "latelier-destelle-db"
+database_id = "73f5d370-d01e-463b-8b27-1189d21c8bd5"

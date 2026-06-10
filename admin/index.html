@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administration - L'atelier d'Estelle</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Poppins', Arial, sans-serif;
+    background: #fdf8f6;
+    color: #5a4d4f;
+    min-height: 100vh;
+  }
+  .login-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .login-box {
+    background: #fff;
+    padding: 2.5rem;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(58, 44, 46, 0.08);
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+  }
+  .login-box h1 {
+    font-family: 'Georgia', serif;
+    color: #3a2c2e;
+    font-size: 1.6rem;
+    margin-bottom: 1.5rem;
+  }
+  .login-box input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 1px solid #f7e4ea;
+    border-radius: 12px;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+  }
+  .login-box button, .btn {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: none;
+    border-radius: 999px;
+    background: #c98ba0;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .login-box button:hover, .btn:hover { background: #b06f86; }
+  .error-msg { color: #c0392b; margin-top: 0.75rem; font-size: 0.9rem; }
+
+  .app { display: none; max-width: 1100px; margin: 0 auto; padding: 2rem 1.25rem; }
+  header.top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  header.top h1 {
+    font-family: 'Georgia', serif;
+    color: #3a2c2e;
+    font-size: 1.6rem;
+  }
+  .logout-btn {
+    background: none;
+    border: 1px solid #f7e4ea;
+    border-radius: 999px;
+    padding: 0.5rem 1.2rem;
+    cursor: pointer;
+    color: #5a4d4f;
+    font-family: inherit;
+  }
+  .filters {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+  }
+  .filters button {
+    padding: 0.5rem 1.1rem;
+    border-radius: 999px;
+    border: 1px solid #f7e4ea;
+    background: #fff;
+    cursor: pointer;
+    font-family: inherit;
+    color: #5a4d4f;
+  }
+  .filters button.active {
+    background: #c98ba0;
+    color: #fff;
+    border-color: #c98ba0;
+  }
+  .appointments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+  .apt-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.25rem;
+    box-shadow: 0 4px 16px rgba(58, 44, 46, 0.06);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+    border-left: 4px solid #f7e4ea;
+  }
+  .apt-card.status-confirmed { border-left-color: #6fbf73; }
+  .apt-card.status-cancelled { border-left-color: #c0392b; opacity: 0.6; }
+  .apt-card.status-pending { border-left-color: #e0a96d; }
+  .apt-main { flex: 1; min-width: 200px; }
+  .apt-date { font-weight: 700; color: #3a2c2e; font-size: 1.05rem; }
+  .apt-service { color: #c98ba0; font-weight: 600; margin-top: 0.2rem; }
+  .apt-client { margin-top: 0.4rem; font-size: 0.9rem; }
+  .apt-notes { margin-top: 0.4rem; font-size: 0.85rem; opacity: 0.75; font-style: italic; }
+  .status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+  .status-badge.pending { background: #fbeede; color: #b9762f; }
+  .status-badge.confirmed { background: #e6f4ea; color: #1e7d3a; }
+  .status-badge.cancelled { background: #fbe7e9; color: #c0392b; }
+  .apt-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .apt-actions button {
+    padding: 0.45rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid #f7e4ea;
+    background: #fff;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: #5a4d4f;
+  }
+  .apt-actions button:hover { background: #f7e4ea; }
+  .apt-actions button.danger:hover { background: #fbe7e9; color: #c0392b; }
+  .empty-msg { text-align: center; padding: 3rem 1rem; opacity: 0.6; }
+</style>
+</head>
+<body>
+
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <h1>Administration</h1>
+    <input type="password" id="passwordInput" placeholder="Mot de passe">
+    <button id="loginBtn">Se connecter</button>
+    <div class="error-msg" id="loginError" style="display:none;"></div>
+  </div>
+</div>
+
+<div class="app" id="app">
+  <header class="top">
+    <h1>Rendez-vous - L'atelier d'Estelle</h1>
+    <button class="logout-btn" id="logoutBtn">Déconnexion</button>
+  </header>
+  <div class="filters">
+    <button class="filter-btn active" data-filter="all">Tous</button>
+    <button class="filter-btn" data-filter="pending">En attente</button>
+    <button class="filter-btn" data-filter="confirmed">Confirmés</button>
+    <button class="filter-btn" data-filter="cancelled">Annulés</button>
+  </div>
+  <div class="appointments-list" id="appointmentsList"></div>
+</div>
+
+<script src="../js/admin.js"></script>
+</body>
+</html>
