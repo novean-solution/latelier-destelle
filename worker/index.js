@@ -42,6 +42,30 @@ function generateDaySlots(dateStr) {
   return slots;
 }
 
+// Trouve un client existant par téléphone, sinon le crée
+async function findOrCreateClient(env, { name, phone, email }) {
+  const cleanPhone = sanitize(phone);
+  if (!cleanPhone) return '';
+
+  const existing = await env.DB.prepare('SELECT id, name, email FROM clients WHERE phone = ?').bind(cleanPhone).first();
+  if (existing) {
+    // Complète les infos manquantes du client si besoin
+    const newName = existing.name || sanitize(name || '');
+    const newEmail = existing.email || sanitize(email || '');
+    if (newName !== existing.name || newEmail !== existing.email) {
+      await env.DB.prepare('UPDATE clients SET name = ?, email = ? WHERE id = ?').bind(newName, newEmail, existing.id).run();
+    }
+    return existing.id;
+  }
+
+  const id = 'cli_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+  await env.DB.prepare(`
+    INSERT INTO clients (id, name, phone, email, notes, createdAt)
+    VALUES (?, ?, ?, ?, '', ?)
+  `).bind(id, sanitize(name || ''), cleanPhone, sanitize(email || ''), new Date().toISOString()).run();
+  return id;
+}
+
 async function handleRequest(request, env) {
   const url = new URL(request.url);
   const headers = corsHeaders(request);
@@ -124,16 +148,178 @@ async function handleRequest(request, env) {
         return Response.json({ success: false, error: 'Ce créneau vient d\'être réservé, merci d\'en choisir un autre.' }, { status: 409, headers });
       }
 
+      const clientId = await findOrCreateClient(env, {
+        name: appointment.clientName, phone: appointment.clientPhone, email: appointment.clientEmail,
+      });
+
       await env.DB.prepare(`
-        INSERT INTO appointments (id, service, category, date, time, duration, clientName, clientPhone, clientEmail, notes, status, createdAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO appointments (id, service, category, date, time, duration, clientId, clientName, clientPhone, clientEmail, notes, status, createdAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         appointment.id, appointment.service, appointment.category, appointment.date, appointment.time,
-        appointment.duration, appointment.clientName, appointment.clientPhone, appointment.clientEmail,
+        appointment.duration, clientId, appointment.clientName, appointment.clientPhone, appointment.clientEmail,
         appointment.notes, appointment.status, appointment.createdAt
       ).run();
 
       return Response.json({ success: true, appointment }, { headers });
+    } catch (e) {
+      return Response.json({ success: false, error: e.message }, { status: 500, headers });
+    }
+  }
+
+  // POST /api/admin/appointments - création manuelle par l'institut (ex: appel téléphonique)
+  if (url.pathname === '/api/admin/appointments' && request.method === 'POST') {
+    if (!isAdmin(request, env)) {
+      return Response.json({ success: false, error: 'Non autorisé' }, { status: 401, headers });
+    }
+
+    let body;
+    try {
+      body = await request.json();
+    } catch (e) {
+      return Response.json({ success: false, error: 'JSON invalide' }, { status: 400, headers });
+    }
+
+    const { service, category, date, time, duration, clientName, clientPhone, clientEmail, notes, status } = body;
+
+    if (!service || !category || !date || !time || !clientName || !clientPhone) {
+      return Response.json({ success: false, error: 'Champs requis manquants' }, { status: 400, headers });
+    }
+
+    const appointment = {
+      id: 'apt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+      service: sanitize(service),
+      category: sanitize(category),
+      date: sanitize(date),
+      time: sanitize(time),
+      duration: Number(duration) || 30,
+      clientName: sanitize(clientName),
+      clientPhone: sanitize(clientPhone),
+      clientEmail: sanitize(clientEmail || ''),
+      notes: sanitize(notes || ''),
+      status: ['pending', 'confirmed', 'cancelled'].includes(status) ? status : 'confirmed',
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      const clientId = await findOrCreateClient(env, {
+        name: appointment.clientName, phone: appointment.clientPhone, email: appointment.clientEmail,
+      });
+
+      await env.DB.prepare(`
+        INSERT INTO appointments (id, service, category, date, time, duration, clientId, clientName, clientPhone, clientEmail, notes, status, createdAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        appointment.id, appointment.service, appointment.category, appointment.date, appointment.time,
+        appointment.duration, clientId, appointment.clientName, appointment.clientPhone, appointment.clientEmail,
+        appointment.notes, appointment.status, appointment.createdAt
+      ).run();
+
+      return Response.json({ success: true, appointment }, { headers });
+    } catch (e) {
+      return Response.json({ success: false, error: e.message }, { status: 500, headers });
+    }
+  }
+
+  // GET /api/admin/clients - liste des clients (avec nb de rendez-vous)
+  if (url.pathname === '/api/admin/clients' && request.method === 'GET') {
+    if (!isAdmin(request, env)) {
+      return Response.json({ success: false, error: 'Non autorisé' }, { status: 401, headers });
+    }
+    try {
+      const { results } = await env.DB.prepare(`
+        SELECT c.*, COUNT(a.id) AS appointmentCount, MAX(a.date) AS lastVisit
+        FROM clients c
+        LEFT JOIN appointments a ON a.clientId = c.id
+        GROUP BY c.id
+        ORDER BY c.name COLLATE NOCASE ASC
+      `).all();
+      return Response.json({ success: true, clients: results || [] }, { headers });
+    } catch (e) {
+      return Response.json({ success: false, error: e.message }, { status: 500, headers });
+    }
+  }
+
+  // POST /api/admin/clients - ajout manuel d'un client
+  if (url.pathname === '/api/admin/clients' && request.method === 'POST') {
+    if (!isAdmin(request, env)) {
+      return Response.json({ success: false, error: 'Non autorisé' }, { status: 401, headers });
+    }
+    const body = await request.json().catch(() => ({}));
+    const name = sanitize(body.name || '');
+    const phone = sanitize(body.phone || '');
+    if (!name || !phone) {
+      return Response.json({ success: false, error: 'Nom et téléphone requis' }, { status: 400, headers });
+    }
+    try {
+      const existing = await env.DB.prepare('SELECT id FROM clients WHERE phone = ?').bind(phone).first();
+      if (existing) {
+        return Response.json({ success: false, error: 'Un client avec ce numéro existe déjà' }, { status: 409, headers });
+      }
+      const id = 'cli_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+      await env.DB.prepare(`
+        INSERT INTO clients (id, name, phone, email, notes, createdAt)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).bind(id, name, phone, sanitize(body.email || ''), sanitize(body.notes || ''), new Date().toISOString()).run();
+      return Response.json({ success: true, id }, { headers });
+    } catch (e) {
+      return Response.json({ success: false, error: e.message }, { status: 500, headers });
+    }
+  }
+
+  // GET /api/admin/clients/:id - détail d'un client + historique de rendez-vous
+  if (url.pathname.match(/^\/api\/admin\/clients\/[^/]+$/) && request.method === 'GET') {
+    if (!isAdmin(request, env)) {
+      return Response.json({ success: false, error: 'Non autorisé' }, { status: 401, headers });
+    }
+    const id = url.pathname.split('/').pop();
+    try {
+      const client = await env.DB.prepare('SELECT * FROM clients WHERE id = ?').bind(id).first();
+      if (!client) {
+        return Response.json({ success: false, error: 'Client introuvable' }, { status: 404, headers });
+      }
+      const { results } = await env.DB.prepare(
+        'SELECT * FROM appointments WHERE clientId = ? ORDER BY date DESC, time DESC'
+      ).bind(id).all();
+      return Response.json({ success: true, client, appointments: results || [] }, { headers });
+    } catch (e) {
+      return Response.json({ success: false, error: e.message }, { status: 500, headers });
+    }
+  }
+
+  // PATCH /api/admin/clients/:id - met à jour les infos / notes d'un client
+  if (url.pathname.match(/^\/api\/admin\/clients\/[^/]+$/) && request.method === 'PATCH') {
+    if (!isAdmin(request, env)) {
+      return Response.json({ success: false, error: 'Non autorisé' }, { status: 401, headers });
+    }
+    const id = url.pathname.split('/').pop();
+    const body = await request.json().catch(() => ({}));
+    try {
+      const existing = await env.DB.prepare('SELECT * FROM clients WHERE id = ?').bind(id).first();
+      if (!existing) {
+        return Response.json({ success: false, error: 'Client introuvable' }, { status: 404, headers });
+      }
+      const name = body.name !== undefined ? sanitize(body.name) : existing.name;
+      const phone = body.phone !== undefined ? sanitize(body.phone) : existing.phone;
+      const email = body.email !== undefined ? sanitize(body.email) : existing.email;
+      const notes = body.notes !== undefined ? sanitize(body.notes) : existing.notes;
+      await env.DB.prepare('UPDATE clients SET name = ?, phone = ?, email = ?, notes = ? WHERE id = ?')
+        .bind(name, phone, email, notes, id).run();
+      return Response.json({ success: true }, { headers });
+    } catch (e) {
+      return Response.json({ success: false, error: e.message }, { status: 500, headers });
+    }
+  }
+
+  // DELETE /api/admin/clients/:id
+  if (url.pathname.match(/^\/api\/admin\/clients\/[^/]+$/) && request.method === 'DELETE') {
+    if (!isAdmin(request, env)) {
+      return Response.json({ success: false, error: 'Non autorisé' }, { status: 401, headers });
+    }
+    const id = url.pathname.split('/').pop();
+    try {
+      await env.DB.prepare('DELETE FROM clients WHERE id = ?').bind(id).run();
+      return Response.json({ success: true }, { headers });
     } catch (e) {
       return Response.json({ success: false, error: e.message }, { status: 500, headers });
     }

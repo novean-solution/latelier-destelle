@@ -151,6 +151,156 @@
   .apt-actions button:hover { background: #f7e4ea; }
   .apt-actions button.danger:hover { background: #fbe7e9; color: #c0392b; }
   .empty-msg { text-align: center; padding: 3rem 1rem; opacity: 0.6; }
+
+  .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; }
+  .tab-btn {
+    padding: 0.6rem 1.4rem;
+    border-radius: 999px;
+    border: 1px solid #f7e4ea;
+    background: #fff;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 600;
+    color: #5a4d4f;
+  }
+  .tab-btn.active { background: #3a2c2e; color: #fff; border-color: #3a2c2e; }
+  .view { display: none; }
+  .view.active { display: block; }
+  .toolbar { display: flex; justify-content: flex-end; margin-bottom: 1rem; }
+  .add-btn {
+    padding: 0.6rem 1.3rem;
+    border: none;
+    border-radius: 999px;
+    background: #c98ba0;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .add-btn:hover { background: #b06f86; }
+
+  .search-input {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border: 1px solid #f7e4ea;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .clients-list { display: flex; flex-direction: column; gap: 0.6rem; }
+  .client-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 4px 16px rgba(58, 44, 46, 0.06);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .client-card:hover { background: #fdf3f6; }
+  .client-card__name { font-weight: 700; color: #3a2c2e; }
+  .client-card__meta { font-size: 0.85rem; opacity: 0.7; margin-top: 0.2rem; }
+  .client-card__count {
+    font-size: 0.8rem;
+    background: #f7e4ea;
+    color: #b06f86;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(58, 44, 46, 0.45);
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    z-index: 100;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 18px;
+    padding: 1.75rem;
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal h2 {
+    font-family: 'Georgia', serif;
+    color: #3a2c2e;
+    margin-bottom: 1.25rem;
+    font-size: 1.3rem;
+  }
+  .modal .form-row { margin-bottom: 0.9rem; display: flex; flex-direction: column; gap: 0.3rem; }
+  .modal label { font-size: 0.85rem; font-weight: 600; color: #3a2c2e; }
+  .modal input, .modal select, .modal textarea {
+    padding: 0.65rem 0.9rem;
+    border: 1px solid #f7e4ea;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.95rem;
+  }
+  .modal textarea { resize: vertical; min-height: 70px; }
+  .modal .form-row-2 { display: flex; gap: 0.75rem; }
+  .modal .form-row-2 > div { flex: 1; display: flex; flex-direction: column; gap: 0.3rem; }
+  .modal-actions { display: flex; gap: 0.75rem; margin-top: 1.25rem; }
+  .modal-actions button {
+    flex: 1;
+    padding: 0.7rem;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .modal-actions .save-btn { background: #c98ba0; color: #fff; }
+  .modal-actions .save-btn:hover { background: #b06f86; }
+  .modal-actions .cancel-btn { background: #f7e4ea; color: #5a4d4f; }
+  .modal-actions .cancel-btn:hover { background: #f0d3dc; }
+  .modal-error { color: #c0392b; font-size: 0.9rem; margin-top: 0.5rem; display: none; }
+
+  /* Client detail */
+  .back-link {
+    display: inline-block;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    color: #b06f86;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  .client-detail__header {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.25rem;
+    box-shadow: 0 4px 16px rgba(58, 44, 46, 0.06);
+    margin-bottom: 1.25rem;
+  }
+  .client-detail__header h2 { font-family: 'Georgia', serif; color: #3a2c2e; margin-bottom: 0.5rem; }
+  .client-detail__meta { font-size: 0.9rem; opacity: 0.75; margin-bottom: 0.25rem; }
+  .client-notes textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #f7e4ea;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    min-height: 90px;
+    resize: vertical;
+    margin-top: 0.5rem;
+  }
+  .client-section-title { font-weight: 700; color: #3a2c2e; margin: 1.5rem 0 0.75rem; }
 </style>
 </head>
 <body>
@@ -166,16 +316,142 @@
 
 <div class="app" id="app">
   <header class="top">
-    <h1>Rendez-vous - L'atelier d'Estelle</h1>
+    <h1>L'atelier d'Estelle - Administration</h1>
     <button class="logout-btn" id="logoutBtn">Déconnexion</button>
   </header>
-  <div class="filters">
-    <button class="filter-btn active" data-filter="all">Tous</button>
-    <button class="filter-btn" data-filter="pending">En attente</button>
-    <button class="filter-btn" data-filter="confirmed">Confirmés</button>
-    <button class="filter-btn" data-filter="cancelled">Annulés</button>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="appointments">Rendez-vous</button>
+    <button class="tab-btn" data-tab="clients">Clients</button>
   </div>
-  <div class="appointments-list" id="appointmentsList"></div>
+
+  <!-- Vue Rendez-vous -->
+  <div class="view active" id="viewAppointments">
+    <div class="toolbar">
+      <button class="add-btn" id="newAppointmentBtn">+ Nouveau rendez-vous</button>
+    </div>
+    <div class="filters">
+      <button class="filter-btn active" data-filter="all">Tous</button>
+      <button class="filter-btn" data-filter="pending">En attente</button>
+      <button class="filter-btn" data-filter="confirmed">Confirmés</button>
+      <button class="filter-btn" data-filter="cancelled">Annulés</button>
+    </div>
+    <div class="appointments-list" id="appointmentsList"></div>
+  </div>
+
+  <!-- Vue Clients (liste) -->
+  <div class="view" id="viewClients">
+    <div class="toolbar">
+      <button class="add-btn" id="newClientBtn">+ Nouveau client</button>
+    </div>
+    <input type="text" class="search-input" id="clientSearch" placeholder="Rechercher un client par nom ou téléphone...">
+    <div class="clients-list" id="clientsList"></div>
+  </div>
+
+  <!-- Vue Détail client -->
+  <div class="view" id="viewClientDetail">
+    <span class="back-link" id="backToClients">← Retour aux clients</span>
+    <div class="client-detail__header">
+      <h2 id="clientDetailName"></h2>
+      <div class="client-detail__meta" id="clientDetailPhone"></div>
+      <div class="client-detail__meta" id="clientDetailEmail"></div>
+      <div class="client-notes">
+        <label for="clientNotes"><strong>Notes personnelles</strong></label>
+        <textarea id="clientNotes" placeholder="Préférences, allergies, anecdotes à se rappeler..."></textarea>
+        <div class="modal-actions">
+          <button class="save-btn" id="saveNotesBtn" style="flex:none; padding:0.6rem 1.4rem;">Enregistrer les notes</button>
+        </div>
+      </div>
+    </div>
+    <div class="client-section-title">Historique des rendez-vous</div>
+    <div class="appointments-list" id="clientAppointmentsList"></div>
+  </div>
+</div>
+
+<!-- Modal nouveau rendez-vous -->
+<div class="modal-overlay" id="appointmentModal">
+  <div class="modal">
+    <h2>Nouveau rendez-vous</h2>
+    <div class="form-row">
+      <label for="aptCategory">Catégorie</label>
+      <select id="aptCategory">
+        <option value="onglerie">Onglerie</option>
+        <option value="thermolyse">Thermolyse</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label for="aptService">Prestation</label>
+      <select id="aptService"></select>
+    </div>
+    <div class="form-row-2">
+      <div>
+        <label for="aptDate">Date</label>
+        <input type="date" id="aptDate">
+      </div>
+      <div>
+        <label for="aptTime">Heure</label>
+        <input type="time" id="aptTime" step="1800">
+      </div>
+    </div>
+    <div class="form-row">
+      <label for="aptStatus">Statut</label>
+      <select id="aptStatus">
+        <option value="confirmed">Confirmé</option>
+        <option value="pending">En attente</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label for="aptClientName">Nom du client</label>
+      <input type="text" id="aptClientName" placeholder="Nom et prénom">
+    </div>
+    <div class="form-row-2">
+      <div>
+        <label for="aptClientPhone">Téléphone</label>
+        <input type="tel" id="aptClientPhone" placeholder="06 12 34 56 78">
+      </div>
+      <div>
+        <label for="aptClientEmail">Email (optionnel)</label>
+        <input type="email" id="aptClientEmail" placeholder="vous@exemple.com">
+      </div>
+    </div>
+    <div class="form-row">
+      <label for="aptNotes">Notes (optionnel)</label>
+      <textarea id="aptNotes" placeholder="Précisions sur la demande..."></textarea>
+    </div>
+    <div class="modal-error" id="appointmentModalError"></div>
+    <div class="modal-actions">
+      <button class="cancel-btn" id="appointmentModalCancel">Annuler</button>
+      <button class="save-btn" id="appointmentModalSave">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal nouveau client -->
+<div class="modal-overlay" id="clientModal">
+  <div class="modal">
+    <h2>Nouveau client</h2>
+    <div class="form-row">
+      <label for="newClientName">Nom</label>
+      <input type="text" id="newClientName" placeholder="Nom et prénom">
+    </div>
+    <div class="form-row">
+      <label for="newClientPhone">Téléphone</label>
+      <input type="tel" id="newClientPhone" placeholder="06 12 34 56 78">
+    </div>
+    <div class="form-row">
+      <label for="newClientEmail">Email (optionnel)</label>
+      <input type="email" id="newClientEmail" placeholder="vous@exemple.com">
+    </div>
+    <div class="form-row">
+      <label for="newClientNotes">Notes (optionnel)</label>
+      <textarea id="newClientNotes" placeholder="Préférences, anecdotes..."></textarea>
+    </div>
+    <div class="modal-error" id="clientModalError"></div>
+    <div class="modal-actions">
+      <button class="cancel-btn" id="clientModalCancel">Annuler</button>
+      <button class="save-btn" id="clientModalSave">Enregistrer</button>
+    </div>
+  </div>
 </div>
 
 <script src="../js/admin.js"></script>

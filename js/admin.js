@@ -1,7 +1,33 @@
 const BOOKING_API = 'https://latelier-destelle-api.contactnovean.workers.dev';
 const STATUS_LABELS = { pending: 'En attente', confirmed: 'Confirmé', cancelled: 'Annulé' };
+
+const SERVICES = {
+  onglerie: [
+    { name: 'Manucure - Rallongement', duration: 90 },
+    { name: 'Manucure - Remplissage gel/renfort', duration: 75 },
+    { name: 'Manucure - Semi permanent', duration: 60 },
+    { name: 'Pédicure - Semi permanent', duration: 60 },
+    { name: 'Formule semi permanent mains + pieds', duration: 90 },
+    { name: 'Formule gel/renfort + semi permanent pieds', duration: 105 },
+  ],
+  thermolyse: [
+    { name: 'Rendez-vous d\'informations', duration: 30 },
+    { name: 'Séance de 15 minutes', duration: 30 },
+    { name: 'Séance de 30 minutes', duration: 30 },
+    { name: 'Séance de 45 minutes', duration: 60 },
+    { name: 'Séance de 1h00', duration: 60 },
+    { name: 'Séance de 1h30', duration: 90 },
+    { name: 'Séance de 2h00', duration: 120 },
+  ],
+};
+
+const PHONE_REGEX = /^0[1-9](\s?\d{2}){4}$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 let currentFilter = 'all';
 let appointments = [];
+let clients = [];
+let currentClientId = null;
 
 const loginScreen = document.getElementById('loginScreen');
 const app = document.getElementById('app');
@@ -21,6 +47,23 @@ function setToken(token) {
 
 function clearToken() {
   sessionStorage.removeItem('adminToken');
+}
+
+async function apiFetch(path, options = {}) {
+  const res = await fetch(`${BOOKING_API}${path}`, {
+    ...options,
+    headers: {
+      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      'Authorization': `Bearer ${getToken()}`,
+      ...(options.headers || {}),
+    },
+  });
+  if (res.status === 401) {
+    clearToken();
+    showLogin();
+    throw new Error('Session expirée');
+  }
+  return res.json();
 }
 
 async function login() {
@@ -54,18 +97,31 @@ function showLogin() {
   app.style.display = 'none';
 }
 
+/* ===== Onglets ===== */
+function switchView(viewId) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(viewId).classList.add('active');
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if (btn.dataset.tab === 'appointments') {
+      switchView('viewAppointments');
+      loadAppointments();
+    } else {
+      switchView('viewClients');
+      loadClients();
+    }
+  });
+});
+
+/* ===== Rendez-vous ===== */
 async function loadAppointments() {
   list.innerHTML = '<p class="empty-msg">Chargement...</p>';
   try {
-    const res = await fetch(`${BOOKING_API}/api/admin/appointments`, {
-      headers: { 'Authorization': `Bearer ${getToken()}` },
-    });
-    if (res.status === 401) {
-      clearToken();
-      showLogin();
-      return;
-    }
-    const data = await res.json();
+    const data = await apiFetch('/api/admin/appointments');
     if (!data.success) throw new Error(data.error || 'Erreur');
     appointments = data.appointments || [];
     render();
@@ -84,7 +140,12 @@ function render() {
     return;
   }
 
-  list.innerHTML = filtered.map(apt => `
+  list.innerHTML = filtered.map(apt => renderAppointmentCard(apt)).join('');
+  attachAppointmentActions(list, loadAppointments);
+}
+
+function renderAppointmentCard(apt) {
+  return `
     <div class="apt-card status-${apt.status}" data-id="${apt.id}">
       <div class="apt-main">
         <div class="apt-date">${formatDate(apt.date)} à ${apt.time}</div>
@@ -99,42 +160,263 @@ function render() {
         <button data-action="delete" class="danger">Supprimer</button>
       </div>
     </div>
-  `).join('');
+  `;
+}
 
-  list.querySelectorAll('.apt-card').forEach(card => {
+function attachAppointmentActions(container, onChange) {
+  container.querySelectorAll('.apt-card').forEach(card => {
     const id = card.dataset.id;
     card.querySelectorAll('button').forEach(btn => {
-      btn.addEventListener('click', () => handleAction(id, btn.dataset.action));
+      btn.addEventListener('click', () => handleAppointmentAction(id, btn.dataset.action, onChange));
     });
   });
 }
 
-async function handleAction(id, action) {
+async function handleAppointmentAction(id, action, onChange) {
   try {
     if (action === 'confirm' || action === 'cancel') {
       const status = action === 'confirm' ? 'confirmed' : 'cancelled';
-      const res = await fetch(`${BOOKING_API}/api/admin/appointments/${id}`, {
+      const data = await apiFetch(`/api/admin/appointments/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
         body: JSON.stringify({ status }),
       });
-      const data = await res.json();
       if (!data.success) throw new Error(data.error);
     } else if (action === 'delete') {
       if (!confirm('Supprimer définitivement ce rendez-vous ?')) return;
-      const res = await fetch(`${BOOKING_API}/api/admin/appointments/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${getToken()}` },
-      });
-      const data = await res.json();
+      const data = await apiFetch(`/api/admin/appointments/${id}`, { method: 'DELETE' });
       if (!data.success) throw new Error(data.error);
     }
-    loadAppointments();
+    onChange();
   } catch (e) {
     alert('Erreur : ' + e.message);
   }
 }
 
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    render();
+  });
+});
+
+/* ===== Modal nouveau rendez-vous ===== */
+const appointmentModal = document.getElementById('appointmentModal');
+const aptCategory = document.getElementById('aptCategory');
+const aptService = document.getElementById('aptService');
+const appointmentModalError = document.getElementById('appointmentModalError');
+
+function populateServiceOptions() {
+  const category = aptCategory.value;
+  aptService.innerHTML = SERVICES[category]
+    .map(s => `<option value="${escapeHtml(s.name)}" data-duration="${s.duration}">${escapeHtml(s.name)} (${s.duration} min)</option>`)
+    .join('');
+}
+
+aptCategory.addEventListener('change', populateServiceOptions);
+
+document.getElementById('newAppointmentBtn').addEventListener('click', () => {
+  populateServiceOptions();
+  document.getElementById('aptDate').value = getParisDateString();
+  document.getElementById('aptTime').value = '';
+  document.getElementById('aptStatus').value = 'confirmed';
+  document.getElementById('aptClientName').value = '';
+  document.getElementById('aptClientPhone').value = '';
+  document.getElementById('aptClientEmail').value = '';
+  document.getElementById('aptNotes').value = '';
+  appointmentModalError.style.display = 'none';
+  appointmentModal.classList.add('active');
+});
+
+document.getElementById('appointmentModalCancel').addEventListener('click', () => {
+  appointmentModal.classList.remove('active');
+});
+
+document.getElementById('appointmentModalSave').addEventListener('click', async () => {
+  const category = aptCategory.value;
+  const selectedOption = aptService.options[aptService.selectedIndex];
+  const service = selectedOption.value;
+  const duration = Number(selectedOption.dataset.duration);
+  const date = document.getElementById('aptDate').value;
+  const time = document.getElementById('aptTime').value;
+  const status = document.getElementById('aptStatus').value;
+  const clientName = document.getElementById('aptClientName').value.trim();
+  const clientPhone = document.getElementById('aptClientPhone').value.trim();
+  const clientEmail = document.getElementById('aptClientEmail').value.trim();
+  const notes = document.getElementById('aptNotes').value.trim();
+
+  if (!date || !time || !clientName || !clientPhone) {
+    return showModalError(appointmentModalError, 'Merci de remplir tous les champs obligatoires.');
+  }
+  if (!PHONE_REGEX.test(clientPhone)) {
+    return showModalError(appointmentModalError, 'Numéro de téléphone invalide. Format attendu : 06 12 34 56 78');
+  }
+  if (clientEmail && !EMAIL_REGEX.test(clientEmail)) {
+    return showModalError(appointmentModalError, 'Adresse email invalide.');
+  }
+
+  try {
+    const data = await apiFetch('/api/admin/appointments', {
+      method: 'POST',
+      body: JSON.stringify({
+        service, category, date, time: time.slice(0, 5), duration, status,
+        clientName, clientPhone, clientEmail, notes,
+      }),
+    });
+    if (!data.success) throw new Error(data.error || 'Erreur');
+    appointmentModal.classList.remove('active');
+    loadAppointments();
+  } catch (e) {
+    showModalError(appointmentModalError, e.message);
+  }
+});
+
+function showModalError(el, message) {
+  el.textContent = message;
+  el.style.display = 'block';
+}
+
+function getParisDateString() {
+  return new Intl.DateTimeFormat('fr-CA', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit' })
+    .format(new Date());
+}
+
+/* ===== Clients ===== */
+async function loadClients() {
+  const container = document.getElementById('clientsList');
+  container.innerHTML = '<p class="empty-msg">Chargement...</p>';
+  try {
+    const data = await apiFetch('/api/admin/clients');
+    if (!data.success) throw new Error(data.error || 'Erreur');
+    clients = data.clients || [];
+    renderClients();
+  } catch (e) {
+    container.innerHTML = `<p class="empty-msg">Erreur : ${e.message}</p>`;
+  }
+}
+
+function renderClients() {
+  const container = document.getElementById('clientsList');
+  const query = document.getElementById('clientSearch').value.trim().toLowerCase();
+
+  const filtered = !query
+    ? clients
+    : clients.filter(c => c.name.toLowerCase().includes(query) || c.phone.includes(query));
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<p class="empty-msg">Aucun client.</p>';
+    return;
+  }
+
+  container.innerHTML = filtered.map(c => `
+    <div class="client-card" data-id="${c.id}">
+      <div>
+        <div class="client-card__name">${escapeHtml(c.name || '(sans nom)')}</div>
+        <div class="client-card__meta">${escapeHtml(c.phone)}${c.email ? ' · ' + escapeHtml(c.email) : ''}${c.lastVisit ? ' · Dernier RDV : ' + formatDate(c.lastVisit) : ''}</div>
+      </div>
+      <span class="client-card__count">${c.appointmentCount} RDV</span>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.client-card').forEach(card => {
+    card.addEventListener('click', () => openClientDetail(card.dataset.id));
+  });
+}
+
+document.getElementById('clientSearch').addEventListener('input', renderClients);
+
+async function openClientDetail(id) {
+  try {
+    const data = await apiFetch(`/api/admin/clients/${id}`);
+    if (!data.success) throw new Error(data.error || 'Erreur');
+
+    currentClientId = id;
+    document.getElementById('clientDetailName').textContent = data.client.name || '(sans nom)';
+    document.getElementById('clientDetailPhone').textContent = '📞 ' + data.client.phone;
+    document.getElementById('clientDetailEmail').textContent = data.client.email ? '✉️ ' + data.client.email : '';
+    document.getElementById('clientNotes').value = data.client.notes || '';
+
+    const aptList = document.getElementById('clientAppointmentsList');
+    if (data.appointments.length === 0) {
+      aptList.innerHTML = '<p class="empty-msg">Aucun rendez-vous pour ce client.</p>';
+    } else {
+      aptList.innerHTML = data.appointments.map(apt => renderAppointmentCard(apt)).join('');
+      attachAppointmentActions(aptList, () => openClientDetail(id));
+    }
+
+    switchView('viewClientDetail');
+  } catch (e) {
+    alert('Erreur : ' + e.message);
+  }
+}
+
+document.getElementById('backToClients').addEventListener('click', () => {
+  switchView('viewClients');
+  loadClients();
+});
+
+document.getElementById('saveNotesBtn').addEventListener('click', async () => {
+  if (!currentClientId) return;
+  const notes = document.getElementById('clientNotes').value.trim();
+  try {
+    const data = await apiFetch(`/api/admin/clients/${currentClientId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ notes }),
+    });
+    if (!data.success) throw new Error(data.error);
+  } catch (e) {
+    alert('Erreur : ' + e.message);
+  }
+});
+
+/* ===== Modal nouveau client ===== */
+const clientModal = document.getElementById('clientModal');
+const clientModalError = document.getElementById('clientModalError');
+
+document.getElementById('newClientBtn').addEventListener('click', () => {
+  document.getElementById('newClientName').value = '';
+  document.getElementById('newClientPhone').value = '';
+  document.getElementById('newClientEmail').value = '';
+  document.getElementById('newClientNotes').value = '';
+  clientModalError.style.display = 'none';
+  clientModal.classList.add('active');
+});
+
+document.getElementById('clientModalCancel').addEventListener('click', () => {
+  clientModal.classList.remove('active');
+});
+
+document.getElementById('clientModalSave').addEventListener('click', async () => {
+  const name = document.getElementById('newClientName').value.trim();
+  const phone = document.getElementById('newClientPhone').value.trim();
+  const email = document.getElementById('newClientEmail').value.trim();
+  const notes = document.getElementById('newClientNotes').value.trim();
+
+  if (!name || !phone) {
+    return showModalError(clientModalError, 'Le nom et le téléphone sont obligatoires.');
+  }
+  if (!PHONE_REGEX.test(phone)) {
+    return showModalError(clientModalError, 'Numéro de téléphone invalide. Format attendu : 06 12 34 56 78');
+  }
+  if (email && !EMAIL_REGEX.test(email)) {
+    return showModalError(clientModalError, 'Adresse email invalide.');
+  }
+
+  try {
+    const data = await apiFetch('/api/admin/clients', {
+      method: 'POST',
+      body: JSON.stringify({ name, phone, email, notes }),
+    });
+    if (!data.success) throw new Error(data.error || 'Erreur');
+    clientModal.classList.remove('active');
+    loadClients();
+  } catch (e) {
+    showModalError(clientModalError, e.message);
+  }
+});
+
+/* ===== Utils ===== */
 function formatDate(dateStr) {
   const date = new Date(dateStr + 'T00:00:00');
   return date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
@@ -149,15 +431,6 @@ function escapeHtml(str) {
 loginBtn.addEventListener('click', login);
 passwordInput.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
 logoutBtn.addEventListener('click', () => { clearToken(); showLogin(); });
-
-document.querySelectorAll('.filter-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentFilter = btn.dataset.filter;
-    render();
-  });
-});
 
 if (getToken()) {
   showApp();
