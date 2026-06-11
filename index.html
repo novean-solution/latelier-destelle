@@ -153,12 +153,24 @@
   <div class="container">
     <p class="section__kicker">Galerie</p>
     <h2 class="section__title">Quelques réalisations</h2>
-    <div class="gallery-grid">
-      <img src="images/523821922.jpg" alt="Avant / après épilation des sourcils" loading="lazy">
-      <img src="images/523811297.jpg" alt="Appareil de thermolyse Apilus" loading="lazy">
-      <img src="images/523822160.jpg" alt="Soin de thermolyse en cabine" loading="lazy">
-    </div>
   </div>
+
+  <div class="gallery-slider">
+    <button type="button" class="gallery-slider__nav gallery-slider__nav--prev" aria-label="Image précédente">‹</button>
+    <div class="gallery-slider__track" id="galleryTrack">
+      <figure class="gallery-slide">
+        <img src="images/523821922.jpg" alt="Avant / après épilation des sourcils" loading="lazy">
+      </figure>
+      <figure class="gallery-slide">
+        <img src="images/523811297.jpg" alt="Appareil de thermolyse Apilus" loading="lazy">
+      </figure>
+      <figure class="gallery-slide">
+        <img src="images/523822160.jpg" alt="Soin de thermolyse en cabine" loading="lazy">
+      </figure>
+    </div>
+    <button type="button" class="gallery-slider__nav gallery-slider__nav--next" aria-label="Image suivante">›</button>
+  </div>
+  <div class="gallery-slider__dots" id="galleryDots"></div>
 </section>
 
 <div class="rdv-modal" id="rendezvous">

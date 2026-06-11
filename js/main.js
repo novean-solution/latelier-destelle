@@ -47,6 +47,44 @@ if (rdvModal) {
   });
 }
 
+// Slider galerie
+const galleryTrack = document.getElementById('galleryTrack');
+if (galleryTrack) {
+  const slides = Array.from(galleryTrack.querySelectorAll('.gallery-slide'));
+  const dotsContainer = document.getElementById('galleryDots');
+  const prevBtn = document.querySelector('.gallery-slider__nav--prev');
+  const nextBtn = document.querySelector('.gallery-slider__nav--next');
+
+  slides.forEach((_, i) => {
+    const dot = document.createElement('button');
+    dot.type = 'button';
+    dot.setAttribute('aria-label', `Aller à l'image ${i + 1}`);
+    if (i === 0) dot.classList.add('active');
+    dot.addEventListener('click', () => slides[i].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }));
+    dotsContainer.appendChild(dot);
+  });
+  const dots = Array.from(dotsContainer.children);
+
+  const scrollByOne = (dir) => {
+    const slide = slides[0];
+    const gap = parseFloat(getComputedStyle(galleryTrack).gap) || 0;
+    galleryTrack.scrollBy({ left: dir * (slide.offsetWidth + gap), behavior: 'smooth' });
+  };
+  prevBtn.addEventListener('click', () => scrollByOne(-1));
+  nextBtn.addEventListener('click', () => scrollByOne(1));
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const index = slides.indexOf(entry.target);
+        dots.forEach(d => d.classList.remove('active'));
+        dots[index].classList.add('active');
+      }
+    });
+  }, { root: galleryTrack, threshold: 0.6 });
+  slides.forEach(slide => observer.observe(slide));
+}
+
 // Header shadow on scroll
 const header = document.getElementById('header');
 window.addEventListener('scroll', () => {
