@@ -1,3 +1,19 @@
+// Preloader
+window.addEventListener('load', () => {
+  document.getElementById('preloader').classList.add('loaded');
+});
+
+// Barre de progression de scroll
+const scrollProgress = document.getElementById('scrollProgress');
+function updateScrollProgress() {
+  const scrollTop = window.scrollY;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+  scrollProgress.style.width = progress + '%';
+}
+window.addEventListener('scroll', updateScrollProgress);
+updateScrollProgress();
+
 // Espace client - L'atelier d'Estelle
 const BOOKING_API = 'https://latelier-destelle-api.contactnovean.workers.dev';
 const PHONE_REGEX = /^0[1-9](\s?\d{2}){4}$/;

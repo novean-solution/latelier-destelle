@@ -1,5 +1,22 @@
 document.getElementById('year').textContent = new Date().getFullYear();
 
+// Preloader
+const preloader = document.getElementById('preloader');
+window.addEventListener('load', () => {
+  preloader.classList.add('loaded');
+});
+
+// Barre de progression de scroll
+const scrollProgress = document.getElementById('scrollProgress');
+function updateScrollProgress() {
+  const scrollTop = window.scrollY;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+  scrollProgress.style.width = progress + '%';
+}
+window.addEventListener('scroll', updateScrollProgress);
+updateScrollProgress();
+
 // Mobile nav toggle
 const burger = document.getElementById('burger');
 const nav = document.getElementById('nav');
