@@ -406,13 +406,47 @@ async function handleRequest(request, env) {
     }
   }
 
-  // PATCH /api/admin/appointments/:id - met à jour le statut
+  // PATCH /api/admin/appointments/:id - met à jour le statut ou les détails du rendez-vous
   if (url.pathname.startsWith('/api/admin/appointments/') && request.method === 'PATCH') {
     if (!isAdmin(request, env)) {
       return Response.json({ success: false, error: 'Non autorisé' }, { status: 401, headers });
     }
     const id = url.pathname.split('/').pop();
     const body = await request.json().catch(() => ({}));
+
+    // Mise à jour complète du rendez-vous (modale "Modifier")
+    if (body.service !== undefined) {
+      const { service, category, date, time, duration, clientName, clientPhone, clientEmail, notes, status } = body;
+      if (!service || !category || !date || !time || !clientName || !clientPhone) {
+        return Response.json({ success: false, error: 'Champs requis manquants' }, { status: 400, headers });
+      }
+      if (status !== undefined && !['pending', 'confirmed', 'cancelled'].includes(status)) {
+        return Response.json({ success: false, error: 'Statut invalide' }, { status: 400, headers });
+      }
+      try {
+        const existing = await env.DB.prepare('SELECT * FROM appointments WHERE id = ?').bind(id).first();
+        if (!existing) {
+          return Response.json({ success: false, error: 'Rendez-vous introuvable' }, { status: 404, headers });
+        }
+        const clientId = await findOrCreateClient(env, {
+          name: sanitize(clientName), phone: sanitize(clientPhone), email: sanitize(clientEmail || ''),
+        });
+        await env.DB.prepare(`
+          UPDATE appointments
+          SET service = ?, category = ?, date = ?, time = ?, duration = ?, clientId = ?, clientName = ?, clientPhone = ?, clientEmail = ?, notes = ?, status = ?
+          WHERE id = ?
+        `).bind(
+          sanitize(service), sanitize(category), sanitize(date), sanitize(time), Number(duration) || 30,
+          clientId, sanitize(clientName), sanitize(clientPhone), sanitize(clientEmail || ''), sanitize(notes || ''),
+          status !== undefined ? status : existing.status, id
+        ).run();
+        return Response.json({ success: true }, { headers });
+      } catch (e) {
+        return Response.json({ success: false, error: e.message }, { status: 500, headers });
+      }
+    }
+
+    // Mise à jour du statut uniquement (boutons confirmer/annuler)
     const status = sanitize(body.status || '');
     if (!['pending', 'confirmed', 'cancelled'].includes(status)) {
       return Response.json({ success: false, error: 'Statut invalide' }, { status: 400, headers });

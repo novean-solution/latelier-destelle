@@ -18,6 +18,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 let currentFilter = 'all';
 let appointments = [];
+let appointmentsById = {};
 let clients = [];
 let currentClientId = null;
 
@@ -132,6 +133,7 @@ function render() {
     return;
   }
 
+  appointments.forEach(apt => { appointmentsById[apt.id] = apt; });
   list.innerHTML = filtered.map(apt => renderAppointmentCard(apt)).join('');
   attachAppointmentActions(list, loadAppointments);
 }
@@ -147,6 +149,7 @@ function renderAppointmentCard(apt) {
         <div style="margin-top:0.5rem;"><span class="status-badge ${apt.status}">${STATUS_LABELS[apt.status] || apt.status}</span></div>
       </div>
       <div class="apt-actions">
+        <button data-action="edit">Modifier</button>
         ${apt.status !== 'confirmed' ? '<button data-action="confirm">Confirmer</button>' : ''}
         ${apt.status !== 'cancelled' ? '<button data-action="cancel">Annuler</button>' : ''}
         <button data-action="delete" class="danger">Supprimer</button>
@@ -166,6 +169,11 @@ function attachAppointmentActions(container, onChange) {
 
 async function handleAppointmentAction(id, action, onChange) {
   try {
+    if (action === 'edit') {
+      const apt = appointmentsById[id];
+      if (apt) await openAppointmentModal(apt);
+      return;
+    }
     if (action === 'confirm' || action === 'cancel') {
       const status = action === 'confirm' ? 'confirmed' : 'cancelled';
       const data = await apiFetch(`/api/admin/appointments/${id}`, {
@@ -304,15 +312,33 @@ document.getElementById('aptCalNext').addEventListener('click', () => {
   renderAptCalendar();
 });
 
-document.getElementById('newAppointmentBtn').addEventListener('click', async () => {
+let editAppointmentId = null;
+
+async function openAppointmentModal(apt) {
   populateServiceOptions();
-  initAptCalendar(getParisDateString());
-  setAptTime('09:00');
-  document.getElementById('aptStatus').value = 'confirmed';
-  document.getElementById('aptClientName').value = '';
-  document.getElementById('aptClientPhone').value = '';
-  document.getElementById('aptClientEmail').value = '';
-  document.getElementById('aptNotes').value = '';
+  editAppointmentId = apt ? apt.id : null;
+  document.getElementById('appointmentModalTitle').textContent = apt ? 'Modifier le rendez-vous' : 'Nouveau rendez-vous';
+
+  if (apt) {
+    const matchIndex = Array.from(aptService.options).findIndex(o => o.value === apt.service);
+    aptService.selectedIndex = matchIndex >= 0 ? matchIndex : 0;
+    initAptCalendar(apt.date);
+    setAptTime(apt.time);
+    document.getElementById('aptStatus').value = apt.status;
+    document.getElementById('aptClientName').value = apt.clientName || '';
+    document.getElementById('aptClientPhone').value = apt.clientPhone || '';
+    document.getElementById('aptClientEmail').value = apt.clientEmail || '';
+    document.getElementById('aptNotes').value = apt.notes || '';
+  } else {
+    initAptCalendar(getParisDateString());
+    setAptTime('09:00');
+    document.getElementById('aptStatus').value = 'confirmed';
+    document.getElementById('aptClientName').value = '';
+    document.getElementById('aptClientPhone').value = '';
+    document.getElementById('aptClientEmail').value = '';
+    document.getElementById('aptNotes').value = '';
+  }
+
   appointmentModalError.style.display = 'none';
   hideClientSuggestions();
   appointmentModal.classList.add('active');
@@ -323,7 +349,9 @@ document.getElementById('newAppointmentBtn').addEventListener('click', async () 
       if (data.success) clients = data.clients || [];
     } catch (e) { /* ignore */ }
   }
-});
+}
+
+document.getElementById('newAppointmentBtn').addEventListener('click', () => openAppointmentModal(null));
 
 /* Autocomplétion client dans le formulaire de rendez-vous */
 const aptClientName = document.getElementById('aptClientName');
@@ -396,16 +424,20 @@ document.getElementById('appointmentModalSave').addEventListener('click', async 
   }
 
   try {
-    const data = await apiFetch('/api/admin/appointments', {
-      method: 'POST',
-      body: JSON.stringify({
-        service, category, date, time: time.slice(0, 5), duration, status,
-        clientName, clientPhone, clientEmail, notes,
-      }),
-    });
+    const payload = {
+      service, category, date, time: time.slice(0, 5), duration, status,
+      clientName, clientPhone, clientEmail, notes,
+    };
+    const data = editAppointmentId
+      ? await apiFetch(`/api/admin/appointments/${editAppointmentId}`, { method: 'PATCH', body: JSON.stringify(payload) })
+      : await apiFetch('/api/admin/appointments', { method: 'POST', body: JSON.stringify(payload) });
     if (!data.success) throw new Error(data.error || 'Erreur');
     appointmentModal.classList.remove('active');
-    loadAppointments();
+    if (currentClientId && document.getElementById('viewClientDetail').classList.contains('active')) {
+      openClientDetail(currentClientId);
+    } else {
+      loadAppointments();
+    }
   } catch (e) {
     showModalError(appointmentModalError, e.message);
   }
@@ -482,6 +514,7 @@ async function openClientDetail(id) {
     if (data.appointments.length === 0) {
       aptList.innerHTML = '<p class="empty-msg">Aucun rendez-vous pour ce client.</p>';
     } else {
+      data.appointments.forEach(apt => { appointmentsById[apt.id] = apt; });
       aptList.innerHTML = data.appointments.map(apt => renderAppointmentCard(apt)).join('');
       attachAppointmentActions(aptList, () => openClientDetail(id));
     }
