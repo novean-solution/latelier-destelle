@@ -73,6 +73,38 @@ if (galleryTrack) {
   prevBtn.addEventListener('click', () => scrollByOne(-1));
   nextBtn.addEventListener('click', () => scrollByOne(1));
 
+  // Drag to scroll avec la souris (desktop)
+  let isDown = false;
+  let dragged = false;
+  let startX = 0;
+  let scrollStart = 0;
+  galleryTrack.addEventListener('mousedown', (e) => {
+    isDown = true;
+    dragged = false;
+    galleryTrack.classList.add('dragging');
+    startX = e.pageX;
+    scrollStart = galleryTrack.scrollLeft;
+  });
+  window.addEventListener('mouseup', () => {
+    isDown = false;
+    galleryTrack.classList.remove('dragging');
+  });
+  galleryTrack.addEventListener('mouseleave', () => {
+    isDown = false;
+    galleryTrack.classList.remove('dragging');
+  });
+  galleryTrack.addEventListener('mousemove', (e) => {
+    if (!isDown) return;
+    e.preventDefault();
+    const delta = e.pageX - startX;
+    if (Math.abs(delta) > 5) dragged = true;
+    galleryTrack.scrollLeft = scrollStart - delta;
+  });
+  galleryTrack.querySelectorAll('a, img').forEach(el => {
+    el.addEventListener('click', (e) => { if (dragged) e.preventDefault(); });
+    el.addEventListener('dragstart', (e) => e.preventDefault());
+  });
+
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {

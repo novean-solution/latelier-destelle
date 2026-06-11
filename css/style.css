@@ -420,8 +420,15 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
   padding: 8px 0 16px;
   -ms-overflow-style: none;
   scrollbar-width: none;
+  cursor: grab;
 }
 .gallery-slider__track::-webkit-scrollbar { display: none; }
+.gallery-slider__track.dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+  scroll-behavior: auto;
+  user-select: none;
+}
 
 .gallery-slide {
   flex: 0 0 auto;
