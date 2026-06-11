@@ -1422,6 +1422,7 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
   .apt-actions button { flex: 1; text-align: center; }
 
   .booking-card { padding: 0; }
+  .booking-card--account { padding: 0.75rem; }
   .booking-slots { grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); gap: 0.45rem; }
   .booking-slot { padding: 0.5rem; font-size: 0.85rem; }
   .booking-calendar { padding: 0.75rem; }
