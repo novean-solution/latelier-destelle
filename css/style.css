@@ -19,6 +19,13 @@ body {
   color: var(--color-text);
   background: var(--color-bg);
   line-height: 1.7;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.footer {
+  margin-top: auto;
 }
 
 img { max-width: 100%; display: block; }
