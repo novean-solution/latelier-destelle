@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Administration - L'atelier d'Estelle</title>
 <meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -19,68 +22,108 @@
     align-items: center;
     justify-content: center;
     padding: 1rem;
+    background: linear-gradient(135deg, #fdf8f6 0%, #f7e4ea 100%);
   }
   .login-box {
     background: #fff;
-    padding: 2.5rem;
-    border-radius: 20px;
-    box-shadow: 0 10px 40px rgba(58, 44, 46, 0.08);
+    padding: 2.75rem 2.5rem;
+    border-radius: 24px;
+    border: 1px solid rgba(58, 44, 46, 0.1);
+    box-shadow: 0 20px 50px rgba(58, 44, 46, 0.1);
     width: 100%;
     max-width: 380px;
     text-align: center;
   }
   .login-box h1 {
-    font-family: 'Georgia', serif;
+    font-family: 'Cormorant Garamond', serif;
     color: #3a2c2e;
-    font-size: 1.6rem;
-    margin-bottom: 1.5rem;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+  }
+  .login-box .login-sub {
+    font-size: 0.85rem;
+    opacity: 0.6;
+    margin-bottom: 1.75rem;
   }
   .login-box input {
     width: 100%;
-    padding: 0.8rem 1rem;
-    border: 1px solid #f7e4ea;
+    padding: 0.85rem 1.1rem;
+    border: 1px solid rgba(58, 44, 46, 0.15);
     border-radius: 12px;
     font-size: 1rem;
+    font-family: inherit;
     margin-bottom: 1rem;
+    transition: border-color 0.2s;
+  }
+  .login-box input:focus {
+    outline: none;
+    border-color: #c98ba0;
   }
   .login-box button, .btn {
     width: 100%;
-    padding: 0.8rem 1rem;
+    padding: 0.85rem 1rem;
     border: none;
     border-radius: 999px;
-    background: #c98ba0;
+    background: linear-gradient(135deg, #c98ba0, #b06f86);
     color: #fff;
     font-size: 1rem;
     font-weight: 600;
+    font-family: inherit;
     cursor: pointer;
-    transition: background 0.2s;
+    box-shadow: 0 6px 18px rgba(176, 111, 134, 0.35);
+    transition: transform 0.15s, box-shadow 0.15s;
   }
-  .login-box button:hover, .btn:hover { background: #b06f86; }
+  .login-box button:hover, .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(176, 111, 134, 0.45); }
   .error-msg { color: #c0392b; margin-top: 0.75rem; font-size: 0.9rem; }
 
-  .app { display: none; max-width: 1100px; margin: 0 auto; padding: 2rem 1.25rem; }
-  header.top {
+  .app { display: none; }
+  .app__header {
+    background: linear-gradient(135deg, #3a2c2e 0%, #5a4540 100%);
+    padding: 1.25rem 1.25rem;
+    margin-bottom: 1.75rem;
+    box-shadow: 0 6px 24px rgba(58, 44, 46, 0.15);
+  }
+  .app__header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
     flex-wrap: wrap;
     gap: 1rem;
   }
   header.top h1 {
-    font-family: 'Georgia', serif;
-    color: #3a2c2e;
-    font-size: 1.6rem;
+    font-family: 'Cormorant Garamond', serif;
+    color: #fff;
+    font-size: 1.7rem;
+    font-weight: 700;
+  }
+  header.top h1 span {
+    display: block;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #f0c9d6;
+    margin-top: 0.15rem;
   }
   .logout-btn {
-    background: none;
-    border: 1px solid #f7e4ea;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: 999px;
-    padding: 0.5rem 1.2rem;
+    padding: 0.55rem 1.3rem;
     cursor: pointer;
-    color: #5a4d4f;
+    color: #fff;
     font-family: inherit;
+    font-weight: 500;
+    transition: background 0.2s;
   }
+  .logout-btn:hover { background: rgba(255, 255, 255, 0.18); }
+
+  .app__body { max-width: 1100px; margin: 0 auto; padding: 0 1.25rem 3rem; }
+
   .filters {
     display: flex;
     gap: 0.5rem;
@@ -88,18 +131,22 @@
     flex-wrap: wrap;
   }
   .filters button {
-    padding: 0.5rem 1.1rem;
+    padding: 0.55rem 1.2rem;
     border-radius: 999px;
-    border: 1px solid #f7e4ea;
+    border: 1px solid rgba(58, 44, 46, 0.15);
     background: #fff;
     cursor: pointer;
     font-family: inherit;
+    font-weight: 500;
     color: #5a4d4f;
+    transition: all 0.2s;
   }
+  .filters button:hover { border-color: #c98ba0; }
   .filters button.active {
-    background: #c98ba0;
+    background: linear-gradient(135deg, #c98ba0, #b06f86);
     color: #fff;
-    border-color: #c98ba0;
+    border-color: transparent;
+    box-shadow: 0 4px 14px rgba(176, 111, 134, 0.35);
   }
   .appointments-list {
     display: flex;
@@ -109,107 +156,127 @@
   .apt-card {
     background: #fff;
     border-radius: 16px;
-    padding: 1.25rem;
-    box-shadow: 0 4px 16px rgba(58, 44, 46, 0.06);
+    padding: 1.25rem 1.4rem;
+    border: 1px solid rgba(58, 44, 46, 0.1);
+    box-shadow: 0 4px 16px rgba(58, 44, 46, 0.05);
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
     gap: 1rem;
     align-items: center;
     border-left: 4px solid #f7e4ea;
+    transition: box-shadow 0.2s, transform 0.2s;
   }
+  .apt-card:hover { box-shadow: 0 8px 24px rgba(58, 44, 46, 0.09); transform: translateY(-1px); }
   .apt-card.status-confirmed { border-left-color: #6fbf73; }
   .apt-card.status-cancelled { border-left-color: #c0392b; opacity: 0.6; }
   .apt-card.status-pending { border-left-color: #e0a96d; }
   .apt-main { flex: 1; min-width: 200px; }
-  .apt-date { font-weight: 700; color: #3a2c2e; font-size: 1.05rem; }
-  .apt-service { color: #c98ba0; font-weight: 600; margin-top: 0.2rem; }
+  .apt-date { font-weight: 700; color: #3a2c2e; font-size: 1.05rem; font-family: 'Cormorant Garamond', serif; }
+  .apt-service { color: #b06f86; font-weight: 600; margin-top: 0.25rem; }
   .apt-client { margin-top: 0.4rem; font-size: 0.9rem; }
-  .apt-notes { margin-top: 0.4rem; font-size: 0.85rem; opacity: 0.75; font-style: italic; }
+  .apt-notes { margin-top: 0.4rem; font-size: 0.85rem; opacity: 0.7; font-style: italic; }
   .status-badge {
     display: inline-block;
-    padding: 0.25rem 0.75rem;
+    padding: 0.3rem 0.85rem;
     border-radius: 999px;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 600;
     text-transform: capitalize;
+    letter-spacing: 0.02em;
   }
   .status-badge.pending { background: #fbeede; color: #b9762f; }
   .status-badge.confirmed { background: #e6f4ea; color: #1e7d3a; }
   .status-badge.cancelled { background: #fbe7e9; color: #c0392b; }
   .apt-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
   .apt-actions button {
-    padding: 0.45rem 0.9rem;
+    padding: 0.45rem 0.95rem;
     border-radius: 999px;
-    border: 1px solid #f7e4ea;
+    border: 1px solid rgba(58, 44, 46, 0.15);
     background: #fff;
     cursor: pointer;
     font-family: inherit;
     font-size: 0.85rem;
     color: #5a4d4f;
+    transition: all 0.2s;
   }
-  .apt-actions button:hover { background: #f7e4ea; }
-  .apt-actions button.danger:hover { background: #fbe7e9; color: #c0392b; }
-  .empty-msg { text-align: center; padding: 3rem 1rem; opacity: 0.6; }
-
-  .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; }
-  .tab-btn {
-    padding: 0.6rem 1.4rem;
-    border-radius: 999px;
-    border: 1px solid #f7e4ea;
+  .apt-actions button:hover { background: #f7e4ea; border-color: #c98ba0; }
+  .apt-actions button.danger:hover { background: #fbe7e9; color: #c0392b; border-color: #c0392b; }
+  .empty-msg {
+    text-align: center;
+    padding: 3.5rem 1rem;
+    opacity: 0.6;
     background: #fff;
+    border-radius: 16px;
+    border: 1px solid rgba(58, 44, 46, 0.1);
+  }
+
+  .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; background: #fff; padding: 0.4rem; border-radius: 999px; border: 1px solid rgba(58, 44, 46, 0.1); width: fit-content; max-width: 100%; }
+  .tab-btn {
+    padding: 0.6rem 1.6rem;
+    border-radius: 999px;
+    border: none;
+    background: transparent;
     cursor: pointer;
     font-family: inherit;
     font-weight: 600;
     color: #5a4d4f;
+    transition: all 0.2s;
   }
-  .tab-btn.active { background: #3a2c2e; color: #fff; border-color: #3a2c2e; }
+  .tab-btn.active { background: linear-gradient(135deg, #3a2c2e, #5a4540); color: #fff; }
   .view { display: none; }
   .view.active { display: block; }
   .toolbar { display: flex; justify-content: flex-end; margin-bottom: 1rem; }
   .add-btn {
-    padding: 0.6rem 1.3rem;
+    padding: 0.65rem 1.4rem;
     border: none;
     border-radius: 999px;
-    background: #c98ba0;
+    background: linear-gradient(135deg, #c98ba0, #b06f86);
     color: #fff;
     font-weight: 600;
     cursor: pointer;
     font-family: inherit;
+    box-shadow: 0 6px 18px rgba(176, 111, 134, 0.3);
+    transition: transform 0.15s, box-shadow 0.15s;
   }
-  .add-btn:hover { background: #b06f86; }
+  .add-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(176, 111, 134, 0.4); }
 
   .search-input {
     width: 100%;
-    padding: 0.7rem 1rem;
-    border: 1px solid #f7e4ea;
+    padding: 0.8rem 1.1rem;
+    border: 1px solid rgba(58, 44, 46, 0.15);
     border-radius: 12px;
     font-family: inherit;
     font-size: 0.95rem;
     margin-bottom: 1.25rem;
+    background: #fff;
+    transition: border-color 0.2s;
   }
+  .search-input:focus { outline: none; border-color: #c98ba0; }
 
   .clients-list { display: flex; flex-direction: column; gap: 0.6rem; }
   .client-card {
     background: #fff;
     border-radius: 14px;
     padding: 1rem 1.25rem;
-    box-shadow: 0 4px 16px rgba(58, 44, 46, 0.06);
+    border: 1px solid rgba(58, 44, 46, 0.1);
+    box-shadow: 0 4px 16px rgba(58, 44, 46, 0.05);
     display: flex;
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
     gap: 1rem;
     flex-wrap: wrap;
+    transition: box-shadow 0.2s, transform 0.2s;
   }
-  .client-card:hover { background: #fdf3f6; }
-  .client-card__name { font-weight: 700; color: #3a2c2e; }
-  .client-card__meta { font-size: 0.85rem; opacity: 0.7; margin-top: 0.2rem; }
+  .client-card:hover { box-shadow: 0 8px 24px rgba(58, 44, 46, 0.09); transform: translateY(-1px); border-color: #c98ba0; }
+  .client-card__name { font-weight: 700; color: #3a2c2e; font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; }
+  .client-card__meta { font-size: 0.85rem; opacity: 0.65; margin-top: 0.2rem; }
   .client-card__count {
     font-size: 0.8rem;
     background: #f7e4ea;
     color: #b06f86;
-    padding: 0.25rem 0.7rem;
+    padding: 0.3rem 0.8rem;
     border-radius: 999px;
     font-weight: 600;
     white-space: nowrap;
@@ -220,7 +287,8 @@
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(58, 44, 46, 0.45);
+    background: rgba(58, 44, 46, 0.5);
+    backdrop-filter: blur(2px);
     align-items: center;
     justify-content: center;
     padding: 1rem;
@@ -229,44 +297,49 @@
   .modal-overlay.active { display: flex; }
   .modal {
     background: #fff;
-    border-radius: 18px;
-    padding: 1.75rem;
+    border-radius: 20px;
+    padding: 1.85rem;
     width: 100%;
     max-width: 520px;
     max-height: 90vh;
     overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(58, 44, 46, 0.2);
   }
   .modal h2 {
-    font-family: 'Georgia', serif;
+    font-family: 'Cormorant Garamond', serif;
     color: #3a2c2e;
-    margin-bottom: 1.25rem;
-    font-size: 1.3rem;
+    margin-bottom: 1.4rem;
+    font-size: 1.6rem;
+    font-weight: 700;
   }
   .modal .form-row { margin-bottom: 0.9rem; display: flex; flex-direction: column; gap: 0.3rem; }
   .modal label { font-size: 0.85rem; font-weight: 600; color: #3a2c2e; }
   .modal input, .modal select, .modal textarea {
     padding: 0.65rem 0.9rem;
-    border: 1px solid #f7e4ea;
+    border: 1px solid rgba(58, 44, 46, 0.15);
     border-radius: 10px;
     font-family: inherit;
     font-size: 0.95rem;
+    transition: border-color 0.2s;
   }
+  .modal input:focus, .modal select:focus, .modal textarea:focus { outline: none; border-color: #c98ba0; }
   .modal textarea { resize: vertical; min-height: 70px; }
   .modal .form-row-2 { display: flex; gap: 0.75rem; }
   .modal .form-row-2 > div { flex: 1; display: flex; flex-direction: column; gap: 0.3rem; }
   .modal-actions { display: flex; gap: 0.75rem; margin-top: 1.25rem; }
   .modal-actions button {
     flex: 1;
-    padding: 0.7rem;
+    padding: 0.75rem;
     border-radius: 999px;
     border: none;
     cursor: pointer;
     font-family: inherit;
     font-weight: 600;
     font-size: 0.95rem;
+    transition: all 0.2s;
   }
-  .modal-actions .save-btn { background: #c98ba0; color: #fff; }
-  .modal-actions .save-btn:hover { background: #b06f86; }
+  .modal-actions .save-btn { background: linear-gradient(135deg, #c98ba0, #b06f86); color: #fff; box-shadow: 0 6px 18px rgba(176, 111, 134, 0.3); }
+  .modal-actions .save-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(176, 111, 134, 0.4); }
   .modal-actions .cancel-btn { background: #f7e4ea; color: #5a4d4f; }
   .modal-actions .cancel-btn:hover { background: #f0d3dc; }
   .modal-error { color: #c0392b; font-size: 0.9rem; margin-top: 0.5rem; display: none; }
@@ -284,7 +357,7 @@
     margin-bottom: 0.75rem;
   }
   .booking-calendar__title {
-    font-family: 'Georgia', serif;
+    font-family: 'Cormorant Garamond', serif;
     font-size: 1.1rem;
     font-weight: 600;
     color: #3a2c2e;
@@ -380,34 +453,66 @@
 
   /* Client detail */
   .back-link {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
     margin-bottom: 1rem;
     cursor: pointer;
     color: #b06f86;
     font-weight: 600;
     font-size: 0.9rem;
+    transition: gap 0.2s;
   }
+  .back-link:hover { gap: 0.6rem; }
   .client-detail__header {
     background: #fff;
-    border-radius: 16px;
-    padding: 1.25rem;
-    box-shadow: 0 4px 16px rgba(58, 44, 46, 0.06);
+    border-radius: 18px;
+    padding: 1.5rem;
+    border: 1px solid rgba(58, 44, 46, 0.1);
+    box-shadow: 0 4px 16px rgba(58, 44, 46, 0.05);
     margin-bottom: 1.25rem;
   }
-  .client-detail__header h2 { font-family: 'Georgia', serif; color: #3a2c2e; margin-bottom: 0.5rem; }
+  .client-detail__header h2 { font-family: 'Cormorant Garamond', serif; color: #3a2c2e; margin-bottom: 0.75rem; font-size: 1.6rem; font-weight: 700; }
   .client-detail__meta { font-size: 0.9rem; opacity: 0.75; margin-bottom: 0.25rem; }
   .client-notes textarea {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid #f7e4ea;
+    border: 1px solid rgba(58, 44, 46, 0.15);
     border-radius: 12px;
     font-family: inherit;
     font-size: 0.95rem;
     min-height: 90px;
     resize: vertical;
     margin-top: 0.5rem;
+    transition: border-color 0.2s;
   }
-  .client-section-title { font-weight: 700; color: #3a2c2e; margin: 1.5rem 0 0.75rem; }
+  .client-notes textarea:focus { outline: none; border-color: #c98ba0; }
+  .client-section-title { font-weight: 700; color: #3a2c2e; font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; margin: 1.75rem 0 0.85rem; }
+
+  @media (max-width: 600px) {
+    .app__header { padding: 1rem; }
+    header.top h1 { font-size: 1.4rem; }
+    .apt-card, .client-card { padding: 1rem; }
+    .tabs { width: 100%; }
+    .tab-btn { flex: 1; padding: 0.6rem 0.5rem; font-size: 0.9rem; }
+  }
+  .client-detail__header .form-row label,
+  .client-detail__header .form-row-2 label { font-size: 0.85rem; font-weight: 600; color: #3a2c2e; }
+  .client-detail__header .form-row input,
+  .client-detail__header .form-row-2 input {
+    padding: 0.65rem 0.9rem;
+    border: 1px solid rgba(58, 44, 46, 0.15);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    width: 100%;
+    transition: border-color 0.2s;
+  }
+  .client-detail__header .form-row input:focus,
+  .client-detail__header .form-row-2 input:focus { outline: none; border-color: #c98ba0; }
+  .client-detail__header .form-row { margin-bottom: 0.9rem; display: flex; flex-direction: column; gap: 0.3rem; }
+  .client-detail__header .form-row-2 { display: flex; gap: 0.75rem; margin-bottom: 0.9rem; }
+  .client-detail__header .form-row-2 > div { flex: 1; display: flex; flex-direction: column; gap: 0.3rem; }
 </style>
 </head>
 <body>
@@ -415,6 +520,7 @@
 <div class="login-screen" id="loginScreen">
   <div class="login-box">
     <h1>Administration</h1>
+    <div class="login-sub">L'atelier d'Estelle</div>
     <input type="password" id="passwordInput" placeholder="Mot de passe">
     <button id="loginBtn">Se connecter</button>
     <div class="error-msg" id="loginError" style="display:none;"></div>
@@ -422,11 +528,14 @@
 </div>
 
 <div class="app" id="app">
-  <header class="top">
-    <h1>L'atelier d'Estelle - Administration</h1>
-    <button class="logout-btn" id="logoutBtn">Déconnexion</button>
-  </header>
+  <div class="app__header">
+    <header class="top app__header-inner">
+      <h1>L'atelier d'Estelle<span>Espace administration</span></h1>
+      <button class="logout-btn" id="logoutBtn">Déconnexion</button>
+    </header>
+  </div>
 
+  <div class="app__body">
   <div class="tabs">
     <button class="tab-btn active" data-tab="appointments">Rendez-vous</button>
     <button class="tab-btn" data-tab="clients">Clients</button>
@@ -486,6 +595,7 @@
     </div>
     <div class="client-section-title">Historique des rendez-vous</div>
     <div class="appointments-list" id="clientAppointmentsList"></div>
+  </div>
   </div>
 </div>
 
