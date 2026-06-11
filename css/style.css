@@ -1184,7 +1184,7 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
 .apt-card.status-confirmed { border-left-color: #6fbf73; }
 .apt-card.status-cancelled { border-left-color: #c0392b; opacity: 0.6; }
 .apt-card.status-pending { border-left-color: #e0a96d; }
-.apt-main { flex: 1; min-width: 200px; }
+.apt-main { flex: 1; min-width: 200px; max-width: 100%; overflow-wrap: anywhere; }
 .apt-date { font-weight: 700; color: var(--color-dark); font-size: 1.05rem; }
 .apt-service { color: var(--color-primary); font-weight: 600; margin-top: 0.2rem; }
 
