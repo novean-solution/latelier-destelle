@@ -946,6 +946,16 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
   min-height: 70vh;
 }
 
+.account-panel {
+  background: #fff;
+  border: 1px solid rgba(58, 44, 46, 0.15);
+  border-radius: 24px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 40px rgba(58, 44, 46, 0.08);
+}
+
+.account-panel .apt-card:last-child { margin-bottom: 0; }
+
 .account__box {
   background: #fff;
   border-radius: 20px;
@@ -1192,6 +1202,7 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
   .account-header__actions .btn { padding: 8px 12px; font-size: 0.78rem; white-space: nowrap; }
 
   .account__box { padding: 1.25rem; border-radius: 16px; }
+  .account-panel { padding: 1rem; border-radius: 18px; }
   .account__box h1 { font-size: 1.6rem; }
   .account__box h2 { font-size: 1.3rem; }
 
