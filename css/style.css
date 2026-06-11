@@ -1017,8 +1017,10 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
   font-size: 0.95rem;
   text-decoration: none;
   padding: 0.9rem 1.4rem;
+  border: none;
   border-radius: 50px;
   box-shadow: 0 8px 24px rgba(176, 111, 134, 0.4);
+  cursor: pointer;
   transition: background 0.2s, transform 0.2s;
 }
 
