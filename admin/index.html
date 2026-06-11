@@ -156,14 +156,9 @@
   .apt-card {
     background: #fff;
     border-radius: 16px;
-    padding: 1.25rem 1.4rem;
+    padding: 1.1rem 1.4rem;
     border: 1px solid rgba(58, 44, 46, 0.1);
     box-shadow: 0 4px 16px rgba(58, 44, 46, 0.05);
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 1rem;
-    align-items: center;
     border-left: 4px solid #f7e4ea;
     transition: box-shadow 0.2s, transform 0.2s;
   }
@@ -171,11 +166,31 @@
   .apt-card.status-confirmed { border-left-color: #6fbf73; }
   .apt-card.status-cancelled { border-left-color: #c0392b; opacity: 0.6; }
   .apt-card.status-pending { border-left-color: #e0a96d; }
+  .apt-summary {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+  }
+  .apt-summary__right { display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0; }
+  .apt-chevron { width: 18px; height: 18px; color: #b06f86; transition: transform 0.2s ease; flex-shrink: 0; }
+  .apt-card.expanded .apt-chevron { transform: rotate(180deg); }
   .apt-main { flex: 1; min-width: 200px; max-width: 100%; overflow-wrap: anywhere; }
   .apt-date { font-weight: 700; color: #3a2c2e; font-size: 1.05rem; font-family: 'Cormorant Garamond', serif; }
   .apt-service { color: #b06f86; font-weight: 600; margin-top: 0.25rem; }
   .apt-client { margin-top: 0.4rem; font-size: 0.9rem; }
+  .apt-details {
+    display: none;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(58, 44, 46, 0.08);
+  }
+  .apt-card.expanded .apt-details { display: block; }
+  .apt-client-detail { font-size: 0.9rem; }
   .apt-notes { margin-top: 0.4rem; font-size: 0.85rem; opacity: 0.7; font-style: italic; }
+  .apt-details .apt-actions { margin-top: 0.85rem; }
   .status-badge {
     display: inline-block;
     padding: 0.3rem 0.85rem;

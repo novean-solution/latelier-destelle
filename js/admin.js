@@ -159,18 +159,26 @@ function renderToday() {
 function renderAppointmentCard(apt) {
   return `
     <div class="apt-card status-${apt.status}" data-id="${apt.id}">
-      <div class="apt-main">
-        <div class="apt-date">${formatDate(apt.date)} à ${apt.time}</div>
-        <div class="apt-service">${escapeHtml(apt.service)} (${apt.duration} min)</div>
-        <div class="apt-client">${escapeHtml(apt.clientName)} · ${escapeHtml(apt.clientPhone)}${apt.clientEmail ? ' · ' + escapeHtml(apt.clientEmail) : ''}</div>
-        ${apt.notes ? `<div class="apt-notes">${escapeHtml(apt.notes)}</div>` : ''}
-        <div style="margin-top:0.5rem;"><span class="status-badge ${apt.status}">${STATUS_LABELS[apt.status] || apt.status}</span></div>
+      <div class="apt-summary">
+        <div class="apt-main">
+          <div class="apt-date">${formatDate(apt.date)} à ${apt.time}</div>
+          <div class="apt-service">${escapeHtml(apt.service)} (${apt.duration} min)</div>
+          <div class="apt-client">${escapeHtml(apt.clientName)}</div>
+        </div>
+        <div class="apt-summary__right">
+          <span class="status-badge ${apt.status}">${STATUS_LABELS[apt.status] || apt.status}</span>
+          <svg class="apt-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
       </div>
-      <div class="apt-actions">
-        <button data-action="edit">Modifier</button>
-        ${apt.status !== 'confirmed' ? '<button data-action="confirm">Confirmer</button>' : ''}
-        ${apt.status !== 'cancelled' ? '<button data-action="cancel">Annuler</button>' : ''}
-        <button data-action="delete" class="danger">Supprimer</button>
+      <div class="apt-details">
+        <div class="apt-client-detail">${escapeHtml(apt.clientPhone)}${apt.clientEmail ? ' · ' + escapeHtml(apt.clientEmail) : ''}</div>
+        ${apt.notes ? `<div class="apt-notes">${escapeHtml(apt.notes)}</div>` : ''}
+        <div class="apt-actions">
+          <button data-action="edit">Modifier</button>
+          ${apt.status !== 'confirmed' ? '<button data-action="confirm">Confirmer</button>' : ''}
+          ${apt.status !== 'cancelled' ? '<button data-action="cancel">Annuler</button>' : ''}
+          <button data-action="delete" class="danger">Supprimer</button>
+        </div>
       </div>
     </div>
   `;
@@ -179,8 +187,14 @@ function renderAppointmentCard(apt) {
 function attachAppointmentActions(container, onChange) {
   container.querySelectorAll('.apt-card').forEach(card => {
     const id = card.dataset.id;
-    card.querySelectorAll('button').forEach(btn => {
-      btn.addEventListener('click', () => handleAppointmentAction(id, btn.dataset.action, onChange));
+    card.querySelector('.apt-summary').addEventListener('click', () => {
+      card.classList.toggle('expanded');
+    });
+    card.querySelectorAll('.apt-actions button').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleAppointmentAction(id, btn.dataset.action, onChange);
+      });
     });
   });
 }
