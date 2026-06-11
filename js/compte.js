@@ -303,8 +303,12 @@ async function loadAppointments() {
 function renderAppointmentsList() {
   const container = document.getElementById('appointmentsList');
 
+  const upcomingTitle = (upcomingAppointments[0] && upcomingAppointments[0].date === getParisDateString())
+    ? "Aujourd'hui"
+    : 'À venir';
+
   let html = '';
-  html += '<h2 style="font-family: var(--font-heading); color: var(--color-dark); margin-bottom: 1rem;">À venir</h2>';
+  html += `<h2 style="font-family: var(--font-heading); color: var(--color-dark); margin-bottom: 1rem;">${upcomingTitle}</h2>`;
   html += renderAppointmentsSection(upcomingAppointments, upcomingPage, 'upcoming', false, 'Aucun rendez-vous à venir.');
 
   if (pastAppointments.length) {
@@ -367,39 +371,46 @@ function attachAppointmentsPagination(container) {
 function renderAppointmentCard(apt, readOnly) {
   return `
     <div class="apt-card status-${apt.status}" data-id="${apt.id}" data-date="${apt.date}" data-time="${apt.time}" data-duration="${apt.duration}">
-      <div class="apt-main">
-        <div class="apt-date">${formatDate(apt.date)} à ${apt.time}</div>
-        <div class="apt-service">${escapeHtml(apt.service)} (${apt.duration} min)</div>
-        ${apt.notes ? `<div class="apt-notes" style="margin-top:0.4rem; font-size:0.85rem; opacity:0.75; font-style:italic;">${escapeHtml(apt.notes)}</div>` : ''}
-        <span class="status-badge ${apt.status}">${STATUS_LABELS[apt.status] || apt.status}</span>
+      <div class="apt-summary">
+        <div class="apt-main">
+          <div class="apt-date">${formatDate(apt.date)} à ${apt.time}</div>
+          <div class="apt-service">${escapeHtml(apt.service)} (${apt.duration} min)</div>
+        </div>
+        <div class="apt-summary__right">
+          <span class="status-badge ${apt.status}">${STATUS_LABELS[apt.status] || apt.status}</span>
+          <svg class="apt-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
       </div>
-      ${readOnly ? '' : `
-      <div class="apt-actions">
-        <button data-action="reschedule">Reporter</button>
-        <button data-action="cancel" class="danger">Annuler</button>
-      </div>
-      <div class="reschedule-box" id="reschedule-${apt.id}">
-        <div class="booking-calendar" id="cal-${apt.id}">
-          <div class="booking-calendar__header">
-            <button type="button" class="booking-calendar__nav" data-nav="prev">‹</button>
-            <span class="booking-calendar__title"></span>
-            <button type="button" class="booking-calendar__nav" data-nav="next">›</button>
+      <div class="apt-details">
+        ${apt.notes ? `<div class="apt-notes" style="font-size:0.85rem; opacity:0.75; font-style:italic;">${escapeHtml(apt.notes)}</div>` : ''}
+        ${readOnly ? '' : `
+        <div class="apt-actions" style="${apt.notes ? 'margin-top:0.75rem;' : ''}">
+          <button data-action="reschedule">Reporter</button>
+          <button data-action="cancel" class="danger">Annuler</button>
+        </div>
+        <div class="reschedule-box" id="reschedule-${apt.id}">
+          <div class="booking-calendar" id="cal-${apt.id}">
+            <div class="booking-calendar__header">
+              <button type="button" class="booking-calendar__nav" data-nav="prev">‹</button>
+              <span class="booking-calendar__title"></span>
+              <button type="button" class="booking-calendar__nav" data-nav="next">›</button>
+            </div>
+            <div class="booking-calendar__weekdays">
+              <span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span>
+            </div>
+            <div class="booking-calendar__days"></div>
           </div>
-          <div class="booking-calendar__weekdays">
-            <span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span>
+          <div class="booking-slots">
+            <p class="booking-hint">Sélectionnez une date pour voir les créneaux disponibles.</p>
           </div>
-          <div class="booking-calendar__days"></div>
+          <div class="account-error"></div>
+          <div class="booking-actions" style="margin-top:1rem;">
+            <button class="btn btn--ghost" data-action="cancel-reschedule">Annuler</button>
+            <button class="btn btn--primary" data-action="confirm-reschedule" disabled>Valider le nouveau créneau</button>
+          </div>
         </div>
-        <div class="booking-slots">
-          <p class="booking-hint">Sélectionnez une date pour voir les créneaux disponibles.</p>
-        </div>
-        <div class="account-error"></div>
-        <div class="booking-actions" style="margin-top:1rem;">
-          <button class="btn btn--ghost" data-action="cancel-reschedule">Annuler</button>
-          <button class="btn btn--primary" data-action="confirm-reschedule" disabled>Valider le nouveau créneau</button>
-        </div>
+        `}
       </div>
-      `}
     </div>
   `;
 }
@@ -407,6 +418,10 @@ function renderAppointmentCard(apt, readOnly) {
 function attachAppointmentActions(container) {
   container.querySelectorAll('.apt-card').forEach(card => {
     const id = card.dataset.id;
+
+    card.querySelector('.apt-summary').addEventListener('click', () => {
+      card.classList.toggle('expanded');
+    });
 
     const cancelBtn = card.querySelector('[data-action="cancel"]');
     if (cancelBtn) {
