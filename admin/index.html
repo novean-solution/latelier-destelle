@@ -271,6 +271,87 @@
   .modal-actions .cancel-btn:hover { background: #f0d3dc; }
   .modal-error { color: #c0392b; font-size: 0.9rem; margin-top: 0.5rem; display: none; }
 
+  /* Calendrier de date (modal rendez-vous) */
+  .booking-calendar {
+    background: #f7e4ea;
+    border-radius: 14px;
+    padding: 1rem;
+  }
+  .booking-calendar__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+  .booking-calendar__title {
+    font-family: 'Georgia', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #3a2c2e;
+    text-transform: capitalize;
+  }
+  .booking-calendar__nav {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: #fff;
+    color: #b06f86;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+  }
+  .booking-calendar__nav:hover { background: #c98ba0; color: #fff; }
+  .booking-calendar__nav:disabled { opacity: 0.3; cursor: not-allowed; }
+  .booking-calendar__weekdays,
+  .booking-calendar__days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.3rem;
+  }
+  .booking-calendar__weekdays span {
+    text-align: center;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #b06f86;
+    padding-bottom: 0.4rem;
+  }
+  .booking-calendar__day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 10px;
+    background: #fff;
+    font-family: inherit;
+    font-size: 0.88rem;
+    color: #5a4d4f;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .booking-calendar__day:hover { background: #c98ba0; color: #fff; }
+  .booking-calendar__day.active { background: #c98ba0; color: #fff; }
+  .booking-calendar__day.disabled,
+  .booking-calendar__day.empty { background: transparent; cursor: default; opacity: 0.35; }
+
+  /* Heure / minute */
+  .time-picker { display: flex; align-items: center; gap: 0.5rem; }
+  .time-picker select {
+    padding: 0.65rem 0.9rem;
+    border: 1px solid #f7e4ea;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    background: #fff;
+    color: #5a4d4f;
+    flex: 1;
+  }
+  .time-picker__sep { font-weight: 700; color: #3a2c2e; }
+
   .form-row { position: relative; }
   .client-suggestions {
     display: none;
@@ -416,14 +497,26 @@
       <label for="aptService">Prestation</label>
       <select id="aptService"></select>
     </div>
-    <div class="form-row-2">
-      <div>
-        <label for="aptDate">Date</label>
-        <input type="date" id="aptDate">
+    <div class="form-row">
+      <label>Date</label>
+      <div class="booking-calendar" id="aptCalendar">
+        <div class="booking-calendar__header">
+          <button type="button" class="booking-calendar__nav" id="aptCalPrev" aria-label="Mois précédent">‹</button>
+          <span class="booking-calendar__title" id="aptCalTitle"></span>
+          <button type="button" class="booking-calendar__nav" id="aptCalNext" aria-label="Mois suivant">›</button>
+        </div>
+        <div class="booking-calendar__weekdays">
+          <span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span>
+        </div>
+        <div class="booking-calendar__days" id="aptCalDays"></div>
       </div>
-      <div>
-        <label for="aptTime">Heure</label>
-        <input type="time" id="aptTime" step="1800">
+    </div>
+    <div class="form-row">
+      <label>Heure</label>
+      <div class="time-picker">
+        <select id="aptHour"></select>
+        <span class="time-picker__sep">:</span>
+        <select id="aptMinute"></select>
       </div>
     </div>
     <div class="form-row">

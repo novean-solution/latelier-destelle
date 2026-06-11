@@ -204,10 +204,110 @@ function populateServiceOptions() {
     .join('');
 }
 
+/* ===== Calendrier de date / heure (modal rendez-vous) ===== */
+let aptCalendarMonth, aptCalendarYear;
+let aptSelectedDate = null;
+
+function populateTimeSelects() {
+  const hourSelect = document.getElementById('aptHour');
+  const minuteSelect = document.getElementById('aptMinute');
+  if (hourSelect.options.length) return;
+  for (let h = 7; h <= 20; h++) {
+    const opt = document.createElement('option');
+    opt.value = String(h).padStart(2, '0');
+    opt.textContent = String(h).padStart(2, '0') + 'h';
+    hourSelect.appendChild(opt);
+  }
+  for (let m = 0; m < 60; m++) {
+    const opt = document.createElement('option');
+    opt.value = String(m).padStart(2, '0');
+    opt.textContent = String(m).padStart(2, '0');
+    minuteSelect.appendChild(opt);
+  }
+}
+
+function setAptTime(time) {
+  populateTimeSelects();
+  const [h, m] = (time || '09:00').split(':');
+  document.getElementById('aptHour').value = h;
+  document.getElementById('aptMinute').value = m;
+}
+
+function getAptTime() {
+  return `${document.getElementById('aptHour').value}:${document.getElementById('aptMinute').value}`;
+}
+
+function initAptCalendar(initialDate) {
+  const d = new Date(initialDate + 'T00:00:00');
+  aptCalendarMonth = d.getMonth();
+  aptCalendarYear = d.getFullYear();
+  aptSelectedDate = initialDate;
+  renderAptCalendar();
+}
+
+function renderAptCalendar() {
+  const title = document.getElementById('aptCalTitle');
+  const daysContainer = document.getElementById('aptCalDays');
+  const prevBtn = document.getElementById('aptCalPrev');
+
+  const monthDate = new Date(aptCalendarYear, aptCalendarMonth, 1);
+  title.textContent = monthDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+
+  const todayStr = getParisDateString();
+  const todayDate = new Date(todayStr + 'T00:00:00');
+  prevBtn.disabled = (aptCalendarYear === todayDate.getFullYear() && aptCalendarMonth === todayDate.getMonth());
+
+  const firstDayIndex = (new Date(aptCalendarYear, aptCalendarMonth, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(aptCalendarYear, aptCalendarMonth + 1, 0).getDate();
+
+  daysContainer.innerHTML = '';
+
+  for (let i = 0; i < firstDayIndex; i++) {
+    const empty = document.createElement('span');
+    empty.className = 'booking-calendar__day empty';
+    daysContainer.appendChild(empty);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${aptCalendarYear}-${String(aptCalendarMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const isPast = dateStr < todayStr;
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'booking-calendar__day';
+    btn.textContent = d;
+
+    if (isPast) {
+      btn.classList.add('disabled');
+      btn.disabled = true;
+    } else {
+      btn.addEventListener('click', () => {
+        aptSelectedDate = dateStr;
+        renderAptCalendar();
+      });
+    }
+
+    if (dateStr === aptSelectedDate) btn.classList.add('active');
+
+    daysContainer.appendChild(btn);
+  }
+}
+
+document.getElementById('aptCalPrev').addEventListener('click', () => {
+  aptCalendarMonth--;
+  if (aptCalendarMonth < 0) { aptCalendarMonth = 11; aptCalendarYear--; }
+  renderAptCalendar();
+});
+document.getElementById('aptCalNext').addEventListener('click', () => {
+  aptCalendarMonth++;
+  if (aptCalendarMonth > 11) { aptCalendarMonth = 0; aptCalendarYear++; }
+  renderAptCalendar();
+});
+
 document.getElementById('newAppointmentBtn').addEventListener('click', async () => {
   populateServiceOptions();
-  document.getElementById('aptDate').value = getParisDateString();
-  document.getElementById('aptTime').value = '';
+  initAptCalendar(getParisDateString());
+  setAptTime('09:00');
   document.getElementById('aptStatus').value = 'confirmed';
   document.getElementById('aptClientName').value = '';
   document.getElementById('aptClientPhone').value = '';
@@ -277,8 +377,8 @@ document.getElementById('appointmentModalSave').addEventListener('click', async 
   const selectedOption = aptService.options[aptService.selectedIndex];
   const service = selectedOption.value;
   const duration = Number(selectedOption.dataset.duration);
-  const date = document.getElementById('aptDate').value;
-  const time = document.getElementById('aptTime').value;
+  const date = aptSelectedDate;
+  const time = getAptTime();
   const status = document.getElementById('aptStatus').value;
   const clientName = document.getElementById('aptClientName').value.trim();
   const clientPhone = document.getElementById('aptClientPhone').value.trim();
