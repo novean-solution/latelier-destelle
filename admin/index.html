@@ -224,9 +224,20 @@
     transition: all 0.2s;
   }
   .tab-btn.active { background: linear-gradient(135deg, #3a2c2e, #5a4540); color: #fff; }
+  .tab-btn:not(.active) { background: #fff; border: 1px solid rgba(58, 44, 46, 0.15); }
+  .tab-btn:not(.active):hover { border-color: #c98ba0; }
   .view { display: none; }
   .view.active { display: block; }
   .toolbar { display: flex; justify-content: flex-end; margin-bottom: 1rem; }
+  .section-subtitle {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #3a2c2e;
+    margin: 0 0 0.85rem;
+  }
+  .today-section { margin-bottom: 2rem; }
+  .today-section .empty-msg { font-size: 0.9rem; }
   .add-btn {
     padding: 0.65rem 1.4rem;
     border: none;
@@ -553,6 +564,11 @@
     <div class="toolbar">
       <button class="add-btn" id="newAppointmentBtn">+ Nouveau rendez-vous</button>
     </div>
+    <div class="today-section" id="todaySection">
+      <h2 class="section-subtitle">Aujourd'hui</h2>
+      <div class="appointments-list" id="todayAppointmentsList"></div>
+    </div>
+    <h2 class="section-subtitle">Tous les rendez-vous</h2>
     <div class="filters">
       <button class="filter-btn active" data-filter="all">Tous</button>
       <button class="filter-btn" data-filter="pending">En attente</button>

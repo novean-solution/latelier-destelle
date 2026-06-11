@@ -136,6 +136,24 @@ function render() {
   appointments.forEach(apt => { appointmentsById[apt.id] = apt; });
   list.innerHTML = filtered.map(apt => renderAppointmentCard(apt)).join('');
   attachAppointmentActions(list, loadAppointments);
+
+  renderToday();
+}
+
+function renderToday() {
+  const todayList = document.getElementById('todayAppointmentsList');
+  const todayStr = getParisDateString();
+  const todayAppointments = appointments
+    .filter(a => a.date === todayStr)
+    .sort((a, b) => a.time.localeCompare(b.time));
+
+  if (todayAppointments.length === 0) {
+    todayList.innerHTML = '<p class="empty-msg">Aucun rendez-vous aujourd\'hui.</p>';
+    return;
+  }
+
+  todayList.innerHTML = todayAppointments.map(apt => renderAppointmentCard(apt)).join('');
+  attachAppointmentActions(todayList, loadAppointments);
 }
 
 function renderAppointmentCard(apt) {

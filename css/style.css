@@ -1320,20 +1320,18 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
   .account__header h1 { font-size: 1.6rem; }
 
   .account__tabs {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    gap: 0.5rem;
-    padding-bottom: 4px;
-    margin: 0 -14px 1.25rem;
-    padding-left: 14px;
-    padding-right: 14px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem;
+    margin: 0 0 1.25rem;
   }
   .account__tab {
-    flex: 0 0 auto;
-    padding: 0.55rem 1.1rem;
-    font-size: 0.88rem;
-    white-space: nowrap;
+    padding: 0.55rem 0.4rem;
+    font-size: 0.78rem;
+    white-space: normal;
+    line-height: 1.2;
+    text-align: center;
+    min-width: 0;
   }
 
   .apt-card {
