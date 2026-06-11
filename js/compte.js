@@ -259,6 +259,12 @@ async function saveProfile() {
 
 /* ===== Mes rendez-vous ===== */
 
+const APPOINTMENTS_PAGE_SIZE = 3;
+let upcomingAppointments = [];
+let pastAppointments = [];
+let upcomingPage = 1;
+let pastPage = 1;
+
 async function loadAppointments() {
   const container = document.getElementById('appointmentsList');
   container.innerHTML = '<p class="empty-msg">Chargement...</p>';
@@ -267,25 +273,79 @@ async function loadAppointments() {
     if (!data.success) throw new Error(data.error || 'Erreur');
 
     const now = `${getParisDateString()}T${getParisTimeString()}`;
-    const upcoming = data.appointments.filter(a => `${a.date}T${a.time}` >= now && a.status !== 'cancelled');
-    const past = data.appointments.filter(a => !(`${a.date}T${a.time}` >= now && a.status !== 'cancelled'));
+    upcomingAppointments = data.appointments.filter(a => `${a.date}T${a.time}` >= now && a.status !== 'cancelled');
+    pastAppointments = data.appointments.filter(a => !(`${a.date}T${a.time}` >= now && a.status !== 'cancelled'));
+    upcomingPage = 1;
+    pastPage = 1;
 
-    let html = '';
-    html += '<h2 style="font-family: var(--font-heading); color: var(--color-dark); margin-bottom: 1rem;">À venir</h2>';
-    html += upcoming.length
-      ? upcoming.map(renderAppointmentCard).join('')
-      : '<p class="empty-msg">Aucun rendez-vous à venir.</p>';
-
-    if (past.length) {
-      html += '<h2 style="font-family: var(--font-heading); color: var(--color-dark); margin: 2rem 0 1rem;">Historique</h2>';
-      html += past.map(a => renderAppointmentCard(a, true)).join('');
-    }
-
-    container.innerHTML = html;
-    attachAppointmentActions(container);
+    renderAppointmentsList();
   } catch (e) {
     container.innerHTML = `<p class="empty-msg">Erreur : ${escapeHtml(e.message)}</p>`;
   }
+}
+
+function renderAppointmentsList() {
+  const container = document.getElementById('appointmentsList');
+
+  let html = '';
+  html += '<h2 style="font-family: var(--font-heading); color: var(--color-dark); margin-bottom: 1rem;">À venir</h2>';
+  html += renderAppointmentsSection(upcomingAppointments, upcomingPage, 'upcoming', false, 'Aucun rendez-vous à venir.');
+
+  if (pastAppointments.length) {
+    html += '<h2 style="font-family: var(--font-heading); color: var(--color-dark); margin: 2rem 0 1rem;">Historique</h2>';
+    html += renderAppointmentsSection(pastAppointments, pastPage, 'past', true, 'Aucun rendez-vous passé.');
+  }
+
+  container.innerHTML = html;
+  attachAppointmentActions(container);
+  attachAppointmentsPagination(container);
+}
+
+function renderAppointmentsSection(appts, page, key, readOnly, emptyMsg) {
+  if (!appts.length) return `<p class="empty-msg">${emptyMsg}</p>`;
+
+  const totalPages = Math.max(1, Math.ceil(appts.length / APPOINTMENTS_PAGE_SIZE));
+  const current = Math.min(page, totalPages);
+  const start = (current - 1) * APPOINTMENTS_PAGE_SIZE;
+  const pageItems = appts.slice(start, start + APPOINTMENTS_PAGE_SIZE);
+
+  let html = `<div class="apt-list" data-section="${key}">`;
+  html += pageItems.map(a => renderAppointmentCard(a, readOnly)).join('');
+  html += '</div>';
+
+  if (totalPages > 1) {
+    html += `<div class="apt-pagination" data-section="${key}">`;
+    html += `<button type="button" class="apt-pagination__btn" data-page-action="prev" ${current === 1 ? 'disabled' : ''} aria-label="Page précédente">‹</button>`;
+    for (let i = 1; i <= totalPages; i++) {
+      html += `<button type="button" class="apt-pagination__btn ${i === current ? 'active' : ''}" data-page-action="page" data-page="${i}">${i}</button>`;
+    }
+    html += `<button type="button" class="apt-pagination__btn" data-page-action="next" ${current === totalPages ? 'disabled' : ''} aria-label="Page suivante">›</button>`;
+    html += '</div>';
+  }
+
+  return html;
+}
+
+function attachAppointmentsPagination(container) {
+  container.querySelectorAll('.apt-pagination').forEach(nav => {
+    const key = nav.dataset.section;
+    const totalPages = Math.max(1, Math.ceil((key === 'upcoming' ? upcomingAppointments.length : pastAppointments.length) / APPOINTMENTS_PAGE_SIZE));
+
+    nav.querySelectorAll('[data-page-action]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        let page = key === 'upcoming' ? upcomingPage : pastPage;
+        const action = btn.dataset.pageAction;
+        if (action === 'prev') page = Math.max(1, page - 1);
+        else if (action === 'next') page = Math.min(totalPages, page + 1);
+        else page = parseInt(btn.dataset.page, 10);
+
+        if (key === 'upcoming') upcomingPage = page;
+        else pastPage = page;
+
+        renderAppointmentsList();
+      });
+    });
+  });
 }
 
 function renderAppointmentCard(apt, readOnly) {

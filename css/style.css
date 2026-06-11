@@ -1122,6 +1122,36 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
 .apt-actions button:hover { background: var(--color-light); }
 .apt-actions button.danger:hover { background: #fbe7e9; color: #c0392b; }
 
+/* ===== Pagination rendez-vous ===== */
+.apt-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 1.25rem 0;
+}
+.apt-pagination__btn {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-light);
+  background: #fff;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  color: var(--color-text);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.apt-pagination__btn:hover:not(:disabled):not(.active) { background: var(--color-light); }
+.apt-pagination__btn.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+  font-weight: 600;
+}
+.apt-pagination__btn:disabled { opacity: 0.35; cursor: default; }
+
 .empty-msg { text-align: center; padding: 2.5rem 1rem; opacity: 0.6; }
 
 .account-error { color: #c0392b; font-size: 0.9rem; margin-top: 0.5rem; display: none; }
