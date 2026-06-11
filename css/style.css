@@ -552,6 +552,7 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
   flex: 0 0 auto;
   width: min(70%, 620px);
   scroll-snap-align: center;
+  scroll-snap-stop: always;
   margin: 0;
   border-radius: 18px;
   overflow: hidden;
