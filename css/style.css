@@ -426,7 +426,7 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
 .histoire__image img {
   display: block;
   width: 100%;
-  max-width: 380px;
+  max-width: 280px;
   margin: 0 auto;
   border-radius: 12px;
   box-shadow: 0 16px 40px rgba(58,44,46,0.12);
@@ -671,7 +671,7 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
   .histoire__inner, .contact__inner { grid-template-columns: 1fr; }
   .valeurs__grid, .services__grid { grid-template-columns: 1fr; }
   .histoire__image { order: -1; }
-  .histoire__image img { max-width: 280px; }
+  .histoire__image img { max-width: 220px; }
   .gallery-slide { width: 82%; }
   .gallery-slide img { height: 320px; }
 }
