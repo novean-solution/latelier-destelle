@@ -309,7 +309,7 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
   border-radius: 12px;
   box-shadow: 0 16px 40px rgba(58,44,46,0.12);
 }
-.histoire__text p { margin-bottom: 16px; font-size: 1.02rem; }
+.histoire__text p { margin-bottom: 16px; font-size: 1.02rem; text-align: justify; hyphens: auto; }
 
 /* Valeurs */
 .valeurs { padding: 100px 0; background: var(--color-light); }
@@ -348,7 +348,7 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
 .service-card:hover .service-card__image img { transform: scale(1.06); }
 .service-card__body { padding: 32px; }
 .service-card__body h3 { font-size: 1.6rem; margin-bottom: 12px; }
-.service-card__body p { font-size: 0.95rem; }
+.service-card__body p { font-size: 0.95rem; text-align: justify; hyphens: auto; }
 
 /* Tarifs */
 .tarifs { padding: 100px 0; background: var(--color-light); }
@@ -501,8 +501,12 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
 
 @media (max-width: 720px) {
   .hero { min-height: auto; padding-bottom: 60px; }
-  .hero__content { padding-top: 110px; padding-bottom: 70px; }
+  .hero__content { padding-top: 110px; padding-bottom: 70px; text-align: center; margin: 0 auto; }
   .hero__divider { height: 40px; }
+  .hero__kicker { justify-content: center; }
+  .hero__text { margin-left: auto; margin-right: auto; }
+  .hero__tags { justify-content: center; }
+  .hero__actions { justify-content: center; }
 }
 
 /* ===== Rendez-vous / Booking widget ===== */
