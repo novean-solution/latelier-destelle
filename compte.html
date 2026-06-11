@@ -135,20 +135,26 @@
         </div>
 
         <div class="profile-card__form">
-          <div class="form-row form-row--icon">
+          <div class="form-row">
             <label for="profileEmail">Email</label>
-            <span class="form-row__icon">✉️</span>
-            <input type="email" id="profileEmail" disabled>
+            <div class="form-row__field">
+              <span class="form-row__icon">✉️</span>
+              <input type="email" id="profileEmail" disabled>
+            </div>
           </div>
-          <div class="form-row form-row--icon">
+          <div class="form-row">
             <label for="profileName">Nom et prénom</label>
-            <span class="form-row__icon">👤</span>
-            <input type="text" id="profileName" placeholder="Votre nom">
+            <div class="form-row__field">
+              <span class="form-row__icon">👤</span>
+              <input type="text" id="profileName" placeholder="Votre nom">
+            </div>
           </div>
-          <div class="form-row form-row--icon">
+          <div class="form-row">
             <label for="profilePhone">Téléphone</label>
-            <span class="form-row__icon">📱</span>
-            <input type="tel" id="profilePhone" placeholder="06 12 34 56 78">
+            <div class="form-row__field">
+              <span class="form-row__icon">📱</span>
+              <input type="tel" id="profilePhone" placeholder="06 12 34 56 78">
+            </div>
           </div>
           <button class="btn btn--primary" id="saveProfileBtn">Enregistrer les modifications</button>
           <div class="account-error" id="profileError"></div>

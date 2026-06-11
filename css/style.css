@@ -1020,16 +1020,18 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
 
 .profile-card__form { padding: 2rem; }
 
-.form-row--icon { position: relative; }
-.form-row--icon .form-row__icon {
+.form-row__field { position: relative; }
+.form-row__field .form-row__icon {
   position: absolute;
   left: 1rem;
-  bottom: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
   font-size: 1rem;
+  line-height: 1;
   opacity: 0.6;
   pointer-events: none;
 }
-.form-row--icon input { padding-left: 2.6rem; }
+.form-row__field input { padding-left: 2.6rem; }
 
 #saveProfileBtn { margin-top: 0.5rem; }
 
