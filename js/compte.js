@@ -190,7 +190,21 @@ function showApp() {
   document.getElementById('profileName').value = currentClient.name || '';
   document.getElementById('profilePhone').value = currentClient.phone || '';
 
+  updateProfileHeader();
   loadAppointments();
+}
+
+function updateProfileHeader() {
+  const name = (currentClient.name || '').trim();
+  const email = currentClient.email || '';
+
+  const initials = name
+    ? name.split(/\s+/).map(p => p[0]).slice(0, 2).join('').toUpperCase()
+    : (email[0] || '?').toUpperCase();
+
+  document.getElementById('profileAvatar').textContent = initials;
+  document.getElementById('profileDisplayName').textContent = name || 'Mon profil';
+  document.getElementById('profileDisplayEmail').textContent = email;
 }
 
 /* ===== Onglets ===== */
@@ -235,6 +249,7 @@ async function saveProfile() {
     if (!data.success) throw new Error(data.error || 'Erreur');
     currentClient.name = name;
     currentClient.phone = phone;
+    updateProfileHeader();
     successEl.style.display = 'block';
   } catch (e) {
     errorEl.textContent = 'Erreur : ' + e.message;

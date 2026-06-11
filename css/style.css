@@ -964,6 +964,75 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
 .account .form-row-2 { display: flex; gap: 0.75rem; }
 .account .form-row-2 > div { flex: 1; }
 
+/* ===== Carte profil ===== */
+.profile-card {
+  background: #fff;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(58, 44, 46, 0.08);
+  margin-bottom: 1.5rem;
+}
+
+.profile-card__banner {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.profile-avatar {
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.profile-card__name {
+  font-family: var(--font-heading);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.profile-card__email {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0.2rem 0 0;
+}
+
+.profile-card__form { padding: 2rem; }
+
+.form-row--icon { position: relative; }
+.form-row--icon .form-row__icon {
+  position: absolute;
+  left: 1rem;
+  bottom: 0.7rem;
+  font-size: 1rem;
+  opacity: 0.6;
+  pointer-events: none;
+}
+.form-row--icon input { padding-left: 2.6rem; }
+
+#saveProfileBtn { margin-top: 0.5rem; }
+
+@media (max-width: 600px) {
+  .profile-card__banner { padding: 1.5rem; gap: 1rem; }
+  .profile-avatar { width: 52px; height: 52px; font-size: 1.2rem; }
+  .profile-card__name { font-size: 1.2rem; }
+  .profile-card__form { padding: 1.5rem; }
+}
+
 .account__tabs {
   display: flex;
   gap: 0.6rem;
