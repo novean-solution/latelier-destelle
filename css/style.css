@@ -1014,7 +1014,9 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
 /* ===== Espace client ===== */
 .account {
   max-width: 720px;
+  width: 100%;
   margin: 0 auto;
+  min-width: 0;
   padding: 140px 20px 80px;
   min-height: 70vh;
 }
