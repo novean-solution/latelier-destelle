@@ -599,9 +599,15 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
   max-width: 700px;
   margin: 2.5rem auto 0;
   background: #fff;
+  border: 1px solid var(--color-light);
   border-radius: 24px;
   padding: 2rem;
   box-shadow: 0 10px 40px rgba(58, 44, 46, 0.08);
+}
+
+.booking-card--account {
+  max-width: none;
+  margin: 0;
 }
 
 .booking-steps {
@@ -974,6 +980,7 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
 /* ===== Carte profil ===== */
 .profile-card {
   background: #fff;
+  border: 1px solid var(--color-light);
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 10px 40px rgba(58, 44, 46, 0.08);
@@ -1078,6 +1085,7 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
 
 .apt-card {
   background: #fff;
+  border: 1px solid var(--color-light);
   border-radius: 16px;
   padding: 1.25rem;
   box-shadow: 0 4px 16px rgba(58, 44, 46, 0.06);
