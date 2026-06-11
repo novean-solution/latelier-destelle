@@ -1052,12 +1052,66 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
 }
 
 /* ===== Espace client ===== */
+.account-app__header {
+  background: linear-gradient(135deg, #3a2c2e 0%, #5a4540 100%);
+  padding: 1.25rem 1.25rem;
+  box-shadow: 0 6px 24px rgba(58, 44, 46, 0.15);
+}
+.account-app__header-inner {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.account-app__header-inner h1 {
+  font-family: var(--font-heading);
+  color: #fff;
+  font-size: 1.7rem;
+  font-weight: 700;
+  margin: 0;
+}
+.account-app__header-inner h1 span {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-light);
+  margin-top: 0.15rem;
+}
+.account-app__header-actions { display: flex; align-items: center; gap: 10px; }
+.account-app__back {
+  color: #fff;
+  font-size: 0.85rem;
+  text-decoration: none;
+  opacity: 0.85;
+  transition: opacity 0.2s;
+}
+.account-app__back:hover { opacity: 1; text-decoration: underline; }
+.account-app__header .logout-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  padding: 0.55rem 1.3rem;
+  cursor: pointer;
+  color: #fff;
+  font-family: inherit;
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+}
+.account-app__header .logout-btn:hover { background: rgba(255, 255, 255, 0.18); }
+
 .account {
   max-width: 720px;
   width: 100%;
   margin: 0 auto;
   min-width: 0;
-  padding: 140px 20px 80px;
+  padding: 2rem 20px 80px;
   min-height: 70vh;
 }
 
@@ -1301,28 +1355,18 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
 }
 .reschedule-box.active { display: block; }
 
-/* Header de l'espace client */
-.account-header__inner { gap: 12px; }
-.account-header__actions { display: flex; align-items: center; gap: 10px; }
-.account-header__actions .btn { padding: 10px 20px; font-size: 0.85rem; white-space: nowrap; }
-
 /* ===== Responsive - Espace client ===== */
 @media (max-width: 640px) {
-  .account { padding: 100px 14px 60px; }
+  .account { padding: 1.5rem 14px 60px; }
 
-  .header__inner.account-header__inner { height: auto; padding: 12px 0; flex-wrap: nowrap; align-items: center; }
-  .account-header__inner .logo { font-size: 1.1rem; }
-  .account-header__inner .logo small { display: none; }
-  .account-header__actions { gap: 8px; }
-  .account-header__actions .btn { padding: 8px 12px; font-size: 0.78rem; white-space: nowrap; }
+  .account-app__header { padding: 1rem; }
+  .account-app__header-inner h1 { font-size: 1.4rem; }
+  .account-app__back { display: none; }
 
   .account__box { padding: 1.25rem; border-radius: 16px; }
   .account-panel { padding: 1rem; border-radius: 18px; }
   .account__box h1 { font-size: 1.6rem; }
   .account__box h2 { font-size: 1.3rem; }
-
-  .account__header { margin-bottom: 1rem; }
-  .account__header h1 { font-size: 1.6rem; }
 
   .account__tabs {
     display: grid;

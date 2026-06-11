@@ -19,15 +19,15 @@
 
 <div class="scroll-progress" id="scrollProgress"></div>
 
-<header class="header" id="header">
-  <div class="container header__inner account-header__inner">
-    <a href="index.html" class="logo">L'atelier <span>d'Estelle</span><small>institut</small></a>
-    <div class="account-header__actions">
-      <a href="index.html" class="btn btn--ghost">← Retour au site</a>
-      <button class="btn btn--primary" id="logoutBtn" style="display:none;">Déconnexion</button>
+<div class="account-app__header">
+  <div class="account-app__header-inner">
+    <h1>L'atelier d'Estelle<span>Mon espace</span></h1>
+    <div class="account-app__header-actions">
+      <a href="index.html" class="account-app__back">← Retour au site</a>
+      <button class="logout-btn" id="logoutBtn" style="display:none;">Déconnexion</button>
     </div>
   </div>
-</header>
+</div>
 
 <main class="account">
 
@@ -58,10 +58,6 @@
 
   <!-- Espace connecté -->
   <div id="app" style="display:none;">
-    <div class="account__header">
-      <h1>Mon espace</h1>
-    </div>
-
     <div class="account__tabs">
       <button class="account__tab active" data-tab="appointments">Mes rendez-vous</button>
       <button class="account__tab" data-tab="booking">Prendre rendez-vous</button>
