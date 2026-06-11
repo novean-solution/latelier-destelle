@@ -198,6 +198,39 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
 
 .header__phone { display: inline-block; white-space: nowrap; }
 
+.header__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.header__account {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--color-text);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+.header__account:hover { color: var(--color-primary-dark); }
+.header__account svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+.header__account-mobile {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--color-light);
+  color: var(--color-dark);
+}
+.header__account-mobile svg { width: 19px; height: 19px; }
+
 .burger {
   display: none;
   flex-direction: column;
@@ -647,6 +680,8 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
   }
   .nav.open { transform: translateY(0); opacity: 1; }
   .header__phone { display: none; }
+  .header__actions { display: none; }
+  .header__account-mobile { display: flex; }
   .burger { display: flex; }
 }
 
@@ -1436,8 +1471,8 @@ body.rdv-modal-open { overflow: hidden; }
     max-height: 100%;
     height: 100%;
     border-radius: 0;
-    padding: 1rem;
-    padding-top: 3.25rem;
+    padding: 1.25rem;
+    padding-top: 3.5rem;
   }
   .rdv-modal__content .section__kicker { margin-bottom: 6px; }
   .rdv-modal__content .section__title {
@@ -1445,6 +1480,6 @@ body.rdv-modal-open { overflow: hidden; }
     margin-bottom: 1.25rem;
     line-height: 1.25;
   }
-  .rdv-modal__content .booking-card { padding: 0.25rem; }
+  .rdv-modal__content .booking-card { padding: 0.5rem; }
   .booking-steps { margin-bottom: 1.25rem; }
 }
