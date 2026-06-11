@@ -21,7 +21,7 @@
       <a href="#services">Services</a>
       <a href="#tarifs">Tarifs</a>
       <a href="#galerie">Galerie</a>
-      <a href="#rendezvous">Rendez-vous</a>
+      <a href="#" class="rdv-trigger">Rendez-vous</a>
       <a href="#contact">Contact</a>
       <a href="compte.html">Mon espace</a>
     </nav>
@@ -161,8 +161,10 @@
   </div>
 </section>
 
-<section class="rendezvous" id="rendezvous">
-  <div class="container">
+<div class="rdv-modal" id="rendezvous">
+  <div class="rdv-modal__overlay" data-rdv-close></div>
+  <div class="rdv-modal__content">
+    <button type="button" class="rdv-modal__close" data-rdv-close aria-label="Fermer">×</button>
     <p class="section__kicker">Rendez-vous</p>
     <h2 class="section__title">Réservez votre créneau en ligne</h2>
 
@@ -245,7 +247,7 @@
       </div>
     </div>
   </div>
-</section>
+</div>
 
 <section class="contact" id="contact">
   <div class="container contact__inner">
@@ -284,7 +286,7 @@
   </div>
 </footer>
 
-<a href="#rendezvous" class="rdv-bubble" aria-label="Prendre rendez-vous">📅<span>Rendez-vous</span></a>
+<button type="button" class="rdv-bubble rdv-trigger" aria-label="Prendre rendez-vous">📅<span>Rendez-vous</span></button>
 
 <script src="js/booking.js"></script>
 <script src="js/main.js"></script>
