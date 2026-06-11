@@ -1085,7 +1085,7 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
 
 .apt-card {
   background: #fff;
-  border: 1px solid var(--color-light);
+  border: 1px solid rgba(58, 44, 46, 0.1);
   border-radius: 16px;
   padding: 1.25rem;
   box-shadow: 0 4px 16px rgba(58, 44, 46, 0.06);
