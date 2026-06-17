@@ -85,33 +85,48 @@ function icsStamp(ms) {
   const d = new Date(ms), p = (n) => String(n).padStart(2, '0');
   return `${d.getUTCFullYear()}${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}T${p(d.getUTCHours())}${p(d.getUTCMinutes())}${p(d.getUTCSeconds())}Z`;
 }
-function icsEvent(apt) {
+// Pliage d'une ligne à 75 octets (RFC 5545 §3.1) — continuation = CRLF + espace.
+function icsFold(line) {
+  if (new TextEncoder().encode(line).length <= 75) return line;
+  const parts = [];
+  let cur = '', limit = 75;
+  for (const ch of Array.from(line)) {
+    if (new TextEncoder().encode(cur + ch).length > limit) { parts.push(cur); cur = ch; limit = 74; }
+    else cur += ch;
+  }
+  if (cur) parts.push(cur);
+  return parts.join('\r\n ');
+}
+function icsEventLines(apt) {
   const start = parisInstant(apt.date, apt.time);
+  if (!isFinite(start)) return []; // date/heure invalide → on saute (évite un DTSTART corrompu)
   const end = start + (Number(apt.duration) || 30) * 60000;
   const lines = [
     'BEGIN:VEVENT',
-    `UID:${apt.id}@latelier-destelle`,
+    `UID:${icsEscape(apt.id)}@latelier-destelle`,
     `DTSTAMP:${icsStamp(Date.now())}`,
     `DTSTART:${icsStamp(start)}`,
     `DTEND:${icsStamp(end)}`,
     `SUMMARY:${icsEscape((apt.service || 'Rendez-vous') + " — L'Atelier d'Estelle")}`,
-    'LOCATION:142 Seillière\\, 01340 Malafretaz',
+    `LOCATION:${icsEscape('142 Seillière, 01340 Malafretaz')}`,
     `STATUS:${apt.status === 'confirmed' ? 'CONFIRMED' : (apt.status === 'cancelled' ? 'CANCELLED' : 'TENTATIVE')}`,
   ];
-  const desc = [apt.clientName ? `Cliente : ${apt.clientName}` : '', apt.notes ? `Note : ${apt.notes}` : ''].filter(Boolean).join('\\n');
+  const desc = [apt.clientName ? `Cliente : ${apt.clientName}` : '', apt.notes ? `Note : ${apt.notes}` : ''].filter(Boolean).join('\n');
   if (desc) lines.push(`DESCRIPTION:${icsEscape(desc)}`);
   lines.push('END:VEVENT');
-  return lines.join('\r\n');
+  return lines;
 }
-function wrapCalendar(name, eventsStr) {
-  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Novean//Atelier Estelle//FR', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', `X-WR-CALNAME:${icsEscape(name)}`, eventsStr, 'END:VCALENDAR'].filter(Boolean).join('\r\n');
+// Pas de METHOD:PUBLISH (meilleure compatibilité import iOS) ; toutes les lignes sont pliées.
+function wrapCalendarLines(name, eventLines) {
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Novean//Atelier Estelle//FR', 'CALSCALE:GREGORIAN', `X-WR-CALNAME:${icsEscape(name)}`, ...eventLines, 'END:VCALENDAR'];
+  return lines.map(icsFold).join('\r\n') + '\r\n';
 }
 export function buildEventICS(apt) {
-  return wrapCalendar("L'Atelier d'Estelle", icsEvent(apt));
+  return wrapCalendarLines("L'Atelier d'Estelle", icsEventLines(apt));
 }
 export function buildFeedICS(appts, name) {
-  const events = (appts || []).filter((a) => a.status !== 'cancelled').map(icsEvent).join('\r\n');
-  return wrapCalendar(name || "L'Atelier d'Estelle", events);
+  const eventLines = (appts || []).filter((a) => a.status !== 'cancelled').flatMap(icsEventLines);
+  return wrapCalendarLines(name || "L'Atelier d'Estelle", eventLines);
 }
 function toBase64(str) {
   const bytes = new TextEncoder().encode(str);
