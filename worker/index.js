@@ -984,7 +984,7 @@ async function handleRequest(request, env, ctx) {
     const client = await env.DB.prepare("SELECT id FROM clients WHERE calendarToken = ? AND calendarToken != ''").bind(token).first();
     if (!client) return new Response('Not found', { status: 404 });
     const { results } = await env.DB.prepare('SELECT * FROM appointments WHERE clientId = ? AND date >= ? ORDER BY date, time').bind(client.id, icsCutoff).all();
-    const ics = buildFeedICS(results || [], "Mes rendez-vous — L'Atelier d'Estelle");
+    const ics = buildFeedICS(results || [], "Mes rendez-vous — L'Atelier d'Estelle", 'client');
     return new Response(ics, { headers: { 'Content-Type': 'text/calendar; charset=utf-8', 'Cache-Control': 'no-cache' } });
   }
 
@@ -1007,7 +1007,7 @@ async function handleRequest(request, env, ctx) {
     const row = await env.DB.prepare("SELECT value FROM settings WHERE key = 'admin_calendar_token'").first();
     if (!token || !row || row.value !== token) return new Response('Not found', { status: 404 });
     const { results } = await env.DB.prepare('SELECT * FROM appointments WHERE date >= ? ORDER BY date, time').bind(icsCutoff).all();
-    const ics = buildFeedICS(results || [], "Agenda — L'Atelier d'Estelle");
+    const ics = buildFeedICS(results || [], "Agenda — L'Atelier d'Estelle", 'admin');
     return new Response(ics, { headers: { 'Content-Type': 'text/calendar; charset=utf-8', 'Cache-Control': 'no-cache' } });
   }
 

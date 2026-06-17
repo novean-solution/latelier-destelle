@@ -97,21 +97,44 @@ function icsFold(line) {
   if (cur) parts.push(cur);
   return parts.join('\r\n ');
 }
-function icsEventLines(apt) {
+// audience : 'admin' (agenda d'Estelle, infos cliente) ou 'client' (agenda de la cliente).
+function icsEventLines(apt, audience) {
   const start = parisInstant(apt.date, apt.time);
   if (!isFinite(start)) return []; // date/heure invalide → on saute (évite un DTSTART corrompu)
   const end = start + (Number(apt.duration) || 30) * 60000;
+  const statusLabel = apt.status === 'confirmed' ? 'Confirmé' : (apt.status === 'cancelled' ? 'Annulé' : 'En attente');
+  const svc = apt.service || 'Rendez-vous';
+
+  let summary, descParts;
+  if (audience === 'admin') {
+    // Titre : Nom Prénom — téléphone ; description : toutes les infos + note.
+    summary = (apt.clientName || 'Cliente') + (apt.clientPhone ? ` — ${apt.clientPhone}` : '');
+    descParts = [
+      `${svc}${apt.duration ? ` (${apt.duration} min)` : ''}`,
+      apt.clientPhone ? `Tél : ${apt.clientPhone}` : '',
+      apt.clientEmail ? `Email : ${apt.clientEmail}` : '',
+      `Statut : ${statusLabel}`,
+      apt.notes ? `Note : ${apt.notes}` : '',
+    ];
+  } else {
+    summary = `${svc} — L'Atelier d'Estelle`;
+    descParts = [
+      apt.notes ? `Note : ${apt.notes}` : '',
+      "L'Atelier d'Estelle — 06 19 75 58 63",
+    ];
+  }
+
   const lines = [
     'BEGIN:VEVENT',
     `UID:${icsEscape(apt.id)}@latelier-destelle`,
     `DTSTAMP:${icsStamp(Date.now())}`,
     `DTSTART:${icsStamp(start)}`,
     `DTEND:${icsStamp(end)}`,
-    `SUMMARY:${icsEscape((apt.service || 'Rendez-vous') + " — L'Atelier d'Estelle")}`,
+    `SUMMARY:${icsEscape(summary)}`,
     `LOCATION:${icsEscape('142 Seillière, 01340 Malafretaz')}`,
     `STATUS:${apt.status === 'confirmed' ? 'CONFIRMED' : (apt.status === 'cancelled' ? 'CANCELLED' : 'TENTATIVE')}`,
   ];
-  const desc = [apt.clientName ? `Cliente : ${apt.clientName}` : '', apt.notes ? `Note : ${apt.notes}` : ''].filter(Boolean).join('\n');
+  const desc = descParts.filter(Boolean).join('\n');
   if (desc) lines.push(`DESCRIPTION:${icsEscape(desc)}`);
   lines.push('END:VEVENT');
   return lines;
@@ -122,10 +145,11 @@ function wrapCalendarLines(name, eventLines) {
   return lines.map(icsFold).join('\r\n') + '\r\n';
 }
 export function buildEventICS(apt) {
-  return wrapCalendarLines("L'Atelier d'Estelle", icsEventLines(apt));
+  // Pièce jointe email envoyée à la cliente → vue 'client'.
+  return wrapCalendarLines("L'Atelier d'Estelle", icsEventLines(apt, 'client'));
 }
-export function buildFeedICS(appts, name) {
-  const eventLines = (appts || []).filter((a) => a.status !== 'cancelled').flatMap(icsEventLines);
+export function buildFeedICS(appts, name, audience) {
+  const eventLines = (appts || []).filter((a) => a.status !== 'cancelled').flatMap((a) => icsEventLines(a, audience));
   return wrapCalendarLines(name || "L'Atelier d'Estelle", eventLines);
 }
 function toBase64(str) {
