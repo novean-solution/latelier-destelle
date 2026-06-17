@@ -101,7 +101,7 @@ body {
   margin-top: auto;
 }
 
-img { max-width: 100%; display: block; }
+img { max-width: 100%; display: block; height: auto; }
 
 .container {
   max-width: 1140px;
