@@ -789,14 +789,24 @@ async function handleRequest(request, env, ctx) {
     }
 
     try {
+      let merged = 0;
       if (phone && phone !== client.phone) {
-        const conflict = await env.DB.prepare('SELECT id FROM clients WHERE phone = ? AND id != ?').bind(phone, client.id).first();
+        const conflict = await env.DB.prepare('SELECT id, email FROM clients WHERE phone = ? AND id != ?').bind(phone, client.id).first();
         if (conflict) {
-          return Response.json({ success: false, error: 'Un autre compte utilise déjà ce numéro' }, { status: 409, headers });
+          if (conflict.email && conflict.email.trim() !== '') {
+            // Un autre VRAI compte (avec email) utilise ce numéro → conflit réel.
+            return Response.json({ success: false, error: 'Un autre compte utilise déjà ce numéro' }, { status: 409, headers });
+          }
+          // Fiche "fantôme" (réservation par téléphone, sans email) → on rattache ses RDV
+          // au compte connecté puis on supprime le doublon.
+          const r = await env.DB.prepare('UPDATE appointments SET clientId = ?, clientEmail = ? WHERE clientId = ?')
+            .bind(client.id, client.email || '', conflict.id).run();
+          merged = (r && r.meta && r.meta.changes) || 0;
+          await env.DB.prepare('DELETE FROM clients WHERE id = ?').bind(conflict.id).run();
         }
       }
       await env.DB.prepare('UPDATE clients SET name = ?, phone = ? WHERE id = ?').bind(name, phone, client.id).run();
-      return Response.json({ success: true }, { headers });
+      return Response.json({ success: true, merged }, { headers });
     } catch (e) {
       console.error(e);
       return Response.json({ success: false, error: 'Une erreur interne est survenue.' }, { status: 500, headers });

@@ -303,7 +303,11 @@ async function saveProfile() {
     currentClient.name = name;
     currentClient.phone = phone;
     updateProfileHeader();
+    successEl.textContent = data.merged > 0
+      ? `Informations enregistrées. ${data.merged} rendez-vous pris par téléphone ont été rattachés à votre compte ✅`
+      : 'Informations enregistrées.';
     successEl.style.display = 'block';
+    loadAppointments(); // au cas où des RDV pris par téléphone viennent d'être rattachés
   } catch (e) {
     errorEl.textContent = 'Erreur : ' + e.message;
     errorEl.style.display = 'block';
