@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS login_codes (
     id TEXT PRIMARY KEY,
     email TEXT NOT NULL,
     code TEXT NOT NULL,
+    attempts INTEGER DEFAULT 0,
     expiresAt TEXT NOT NULL,
     createdAt TEXT NOT NULL
 );
@@ -46,3 +47,10 @@ CREATE TABLE IF NOT EXISTS sessions (
     createdAt TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_sessions_clientId ON sessions(clientId);
+
+CREATE TABLE IF NOT EXISTS admin_sessions (
+    token TEXT PRIMARY KEY,
+    expiresAt TEXT NOT NULL,
+    createdAt TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_admin_sessions_expires ON admin_sessions(expiresAt);

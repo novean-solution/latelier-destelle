@@ -1566,3 +1566,39 @@ body.rdv-modal-open { overflow: hidden; }
   .rdv-modal__content .booking-card { padding: 0.5rem; }
   .booking-steps { margin-bottom: 1.25rem; }
 }
+
+/* ============================================================
+   Correctifs accessibilité & contraste (revue 2026-06)
+   ============================================================ */
+
+/* Décalage des ancres sous le header fixe (#accueil, #services, etc.) */
+html { scroll-padding-top: 90px; }
+
+/* Focus clavier visible sur tous les éléments interactifs */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.booking-slot:focus-visible,
+.booking-service-card:focus-visible,
+.booking-calendar__day:focus-visible,
+.account__tab:focus-visible,
+.gallery-slider__dots button:focus-visible {
+  outline: 3px solid var(--color-primary-dark);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Contraste : notes de tarifs / indices / crédit (étaient trop clairs) */
+.tarifs__note,
+.prestations__note,
+.booking-hint { color: #6b5c5e; }
+.footer__credit { opacity: 0.85; }
+.footer__credit a { color: inherit; text-decoration: underline; }
+
+/* Carte de contact : hauteur garantie en mobile (pas d'effondrement) */
+@media (max-width: 768px) {
+  .contact__map { min-height: 300px; }
+  .contact__map iframe { min-height: 300px; }
+}

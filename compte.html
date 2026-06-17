@@ -32,7 +32,7 @@
 
   <!-- Connexion -->
   <div class="account__box" id="loginBox">
-    <h1>Mon espace client</h1>
+    <h2>Mon espace client</h2>
     <p class="hint">Connectez-vous avec votre adresse email pour gérer vos rendez-vous.</p>
 
     <div id="emailStep">
@@ -41,7 +41,7 @@
         <input type="email" id="loginEmail" placeholder="vous@exemple.com">
       </div>
       <button class="btn btn--primary" id="sendCodeBtn">Recevoir mon code de connexion</button>
-      <div class="account-error" id="emailError"></div>
+      <div class="account-error" id="emailError" role="alert" aria-live="assertive"></div>
     </div>
 
     <div id="codeStep" style="display:none;">
@@ -51,7 +51,7 @@
         <input type="text" id="loginCode" inputmode="numeric" maxlength="6" placeholder="123456">
       </div>
       <button class="btn btn--primary" id="verifyCodeBtn">Se connecter</button>
-      <div class="account-error" id="codeError"></div>
+      <div class="account-error" id="codeError" role="alert" aria-live="assertive"></div>
     </div>
   </div>
 
@@ -114,7 +114,7 @@
           <p class="booking-success" id="bookingSuccess" style="display:none;">
             ✅ Votre demande de rendez-vous a bien été envoyée ! Estelle vous confirmera votre créneau rapidement.
           </p>
-          <p class="booking-error" id="bookingError" style="display:none;"></p>
+          <p class="booking-error" id="bookingError" role="alert" aria-live="assertive" style="display:none;"></p>
         </div>
 
         <div class="booking-actions">
@@ -159,7 +159,7 @@
             </div>
           </div>
           <button class="btn btn--primary" id="saveProfileBtn">Enregistrer les modifications</button>
-          <div class="account-error" id="profileError"></div>
+          <div class="account-error" id="profileError" role="alert" aria-live="assertive"></div>
           <div class="account-success" id="profileSuccess">Informations enregistrées.</div>
         </div>
       </div>
@@ -176,7 +176,7 @@
 <footer class="footer">
   <div class="container footer__inner">
     <p>&copy; <span id="year"></span> L'atelier d'Estelle institut — Tous droits réservés</p>
-    <p class="footer__credit">Site réalisé par Novean</p>
+    <p class="footer__credit">Site réalisé par <a href="https://www.novean.fr" target="_blank" rel="noopener">Novean</a></p>
   </div>
 </footer>
 

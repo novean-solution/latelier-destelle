@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="estGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#c98ba0"/>
+      <stop offset="1" stop-color="#b06f86"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#estGrad)"/>
+  <text x="32" y="44" text-anchor="middle" font-family="Georgia, 'Cormorant Garamond', serif" font-size="38" font-style="italic" fill="#fff7fa">é</text>
+</svg>

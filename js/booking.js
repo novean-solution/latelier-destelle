@@ -4,6 +4,7 @@ const BOOKING_API = 'https://latelier-destelle-api.contactnovean.workers.dev';
 const SERVICES = {
   thermolyse: [
     { name: 'Rendez-vous d\'informations', duration: 30, price: '20 €' },
+    { name: 'Séance de 5 minutes', duration: 30, price: '20 €' },
     { name: 'Séance de 15 minutes', duration: 30, price: '40 €' },
     { name: 'Séance de 30 minutes', duration: 30, price: '70 €' },
     { name: 'Séance de 45 minutes', duration: 60, price: '100 €' },
@@ -53,8 +54,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-const PHONE_REGEX = /^0[1-9](\s?\d{2}){4}$/;
+const PHONE_REGEX = /^(?:\+33\s?|0)[1-9](?:[\s.]?\d{2}){4}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
 
 function validateEmail() {
   const input = document.getElementById('bookingEmail');
@@ -186,7 +191,7 @@ function renderServices(category) {
     card.type = 'button';
     card.className = 'booking-service-card';
     card.innerHTML = `<span class="booking-service-name">${service.name}</span>
-      <span class="booking-service-meta">${service.duration} min · ${service.price}</span>`;
+      <span class="booking-service-meta">${service.price}</span>`;
     card.addEventListener('click', () => {
       document.querySelectorAll('.booking-service-card').forEach(c => c.classList.remove('active'));
       card.classList.add('active');
@@ -229,6 +234,13 @@ async function loadSlots(date) {
     if (!data.success) throw new Error(data.error || 'Erreur');
 
     let slots = data.slots;
+
+    // N'afficher que les créneaux où la séance choisie tient avant la fermeture (20h)
+    const dur = (bookingState.service && bookingState.service.duration) || 30;
+    slots = slots.filter(s => {
+      const start = parseInt(s.slice(0, 2), 10) * 60 + parseInt(s.slice(3, 5), 10);
+      return start + dur <= 20 * 60;
+    });
 
     if (date === getParisDateString()) {
       const nowTime = getParisTimeString();
@@ -293,14 +305,14 @@ function updateNextButton() {
 function renderSummary() {
   const container = document.getElementById('bookingSummary');
   container.innerHTML = `
-    <div class="summary-row"><strong>Prestation :</strong> ${bookingState.service.name}</div>
-    <div class="summary-row"><strong>Durée :</strong> ${bookingState.service.duration} min — ${bookingState.service.price}</div>
-    <div class="summary-row"><strong>Date :</strong> ${formatDate(bookingState.date)}</div>
-    <div class="summary-row"><strong>Heure :</strong> ${bookingState.time}</div>
-    <div class="summary-row"><strong>Nom :</strong> ${bookingState.name}</div>
-    <div class="summary-row"><strong>Téléphone :</strong> ${bookingState.phone}</div>
-    ${bookingState.email ? `<div class="summary-row"><strong>Email :</strong> ${bookingState.email}</div>` : ''}
-    ${bookingState.notes ? `<div class="summary-row"><strong>Message :</strong> ${bookingState.notes}</div>` : ''}
+    <div class="summary-row"><strong>Prestation :</strong> ${escapeHtml(bookingState.service.name)}</div>
+    <div class="summary-row"><strong>Tarif :</strong> ${escapeHtml(bookingState.service.price)}</div>
+    <div class="summary-row"><strong>Date :</strong> ${escapeHtml(formatDate(bookingState.date))}</div>
+    <div class="summary-row"><strong>Heure :</strong> ${escapeHtml(bookingState.time)}</div>
+    <div class="summary-row"><strong>Nom :</strong> ${escapeHtml(bookingState.name)}</div>
+    <div class="summary-row"><strong>Téléphone :</strong> ${escapeHtml(bookingState.phone)}</div>
+    ${bookingState.email ? `<div class="summary-row"><strong>Email :</strong> ${escapeHtml(bookingState.email)}</div>` : ''}
+    ${bookingState.notes ? `<div class="summary-row"><strong>Message :</strong> ${escapeHtml(bookingState.notes)}</div>` : ''}
   `;
 }
 
@@ -334,11 +346,25 @@ async function submitBooking() {
       }),
     });
     const data = await res.json();
-    if (!data.success) throw new Error(data.error || 'Erreur lors de l\'envoi');
+    if (!data.success) {
+      // Créneau pris entre-temps : retour au choix de l'horaire avec les créneaux à jour
+      if (res.status === 409 && bookingState.date) {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Confirmer le rendez-vous';
+        bookingState.time = null;
+        goToStep(2);
+        loadSlots(bookingState.date);
+        showDateError(data.error || 'Ce créneau vient d\'être réservé, merci d\'en choisir un autre.');
+        return;
+      }
+      throw new Error(data.error || 'Erreur lors de l\'envoi');
+    }
 
     successEl.style.display = 'block';
+    errorEl.style.display = 'none';
     confirmBtn.style.display = 'none';
     document.getElementById('bookingPrevBtn').style.display = 'none';
+    window.__bookingDone = true; // repart d'un formulaire vierge à la réouverture
   } catch (e) {
     errorEl.textContent = '❌ ' + e.message;
     errorEl.style.display = 'block';
@@ -346,3 +372,29 @@ async function submitBooking() {
     confirmBtn.textContent = 'Confirmer le rendez-vous';
   }
 }
+
+// Réinitialise le tunnel de réservation (appelé à la réouverture après une réservation confirmée)
+function resetBooking() {
+  bookingState.step = 1;
+  bookingState.service = null;
+  bookingState.date = null;
+  bookingState.time = null;
+  bookingState.name = bookingState.phone = bookingState.email = bookingState.notes = '';
+  ['bookingName', 'bookingPhone', 'bookingEmail', 'bookingNotes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.querySelectorAll('.booking-service-card.active, .booking-slot.active, .booking-calendar__day.active')
+    .forEach(e => e.classList.remove('active'));
+  const succ = document.getElementById('bookingSuccess');
+  if (succ) succ.style.display = 'none';
+  const err = document.getElementById('bookingError');
+  if (err) err.style.display = 'none';
+  hideDateError();
+  const slots = document.getElementById('bookingSlots');
+  if (slots) slots.innerHTML = '<p class="booking-hint">Sélectionnez une date pour voir les créneaux disponibles.</p>';
+  const confirmBtn = document.getElementById('bookingConfirmBtn');
+  if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Confirmer le rendez-vous'; confirmBtn.style.display = 'none'; }
+  goToStep(1);
+}
+window.resetBooking = resetBooking;

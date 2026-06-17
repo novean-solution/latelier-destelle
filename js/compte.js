@@ -1,18 +1,23 @@
 // Preloader
-window.addEventListener('load', () => {
-  document.getElementById('preloader').classList.add('loaded');
-});
+const preloader = document.getElementById('preloader');
+if (preloader) {
+  window.addEventListener('load', () => preloader.classList.add('loaded'));
+  setTimeout(() => preloader.classList.add('loaded'), 4000); // filet de sécurité anti-blocage
+}
 
 // Barre de progression de scroll
 const scrollProgress = document.getElementById('scrollProgress');
 function updateScrollProgress() {
+  if (!scrollProgress) return;
   const scrollTop = window.scrollY;
   const docHeight = document.documentElement.scrollHeight - window.innerHeight;
   const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
   scrollProgress.style.width = progress + '%';
 }
-window.addEventListener('scroll', updateScrollProgress);
-updateScrollProgress();
+if (scrollProgress) {
+  window.addEventListener('scroll', updateScrollProgress);
+  updateScrollProgress();
+}
 
 // Espace client - L'atelier d'Estelle
 const BOOKING_API = 'https://latelier-destelle-api.contactnovean.workers.dev';
@@ -22,6 +27,7 @@ const STATUS_LABELS = { pending: 'En attente', confirmed: 'Confirmé', cancelled
 
 const SERVICES = [
   { name: 'Rendez-vous d\'informations', duration: 30, price: '20 €' },
+  { name: 'Séance de 5 minutes', duration: 30, price: '20 €' },
   { name: 'Séance de 15 minutes', duration: 30, price: '40 €' },
   { name: 'Séance de 30 minutes', duration: 30, price: '70 €' },
   { name: 'Séance de 45 minutes', duration: 60, price: '100 €' },
@@ -44,6 +50,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('sendCodeBtn').addEventListener('click', sendCode);
   document.getElementById('verifyCodeBtn').addEventListener('click', verifyCode);
   document.getElementById('logoutBtn').addEventListener('click', logout);
+
+  // Validation par la touche Entrée + code limité à 6 chiffres
+  document.getElementById('loginEmail').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); sendCode(); } });
+  document.getElementById('loginCode').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); verifyCode(); } });
+  document.getElementById('loginCode').addEventListener('input', (e) => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6); });
 
   document.querySelectorAll('.account__tab').forEach(tab => {
     tab.addEventListener('click', () => switchTab(tab.dataset.tab));
@@ -92,10 +103,18 @@ async function apiFetch(path, options = {}) {
       ...(options.headers || {}),
     },
   });
-  const data = await res.json();
+  // Session expirée : on traite le 401 avant de parser (la réponse peut ne pas être du JSON)
   if (res.status === 401) {
     logout();
     throw new Error('Session expirée, merci de vous reconnecter.');
+  }
+  let data;
+  try {
+    data = await res.json();
+  } catch (_) {
+    // Réponse non-JSON (500 HTML, 204, corps vide…) : on ne plante pas
+    if (res.ok) return { success: true };
+    throw new Error('Une erreur est survenue, merci de réessayer.');
   }
   return data;
 }
@@ -129,6 +148,10 @@ async function sendCode() {
     document.getElementById('emailStep').style.display = 'none';
     document.getElementById('codeStep').style.display = 'block';
     document.getElementById('codeStep').dataset.email = email;
+    const codeInput = document.getElementById('loginCode');
+    codeInput.value = '';
+    document.getElementById('codeError').style.display = 'none';
+    codeInput.focus();
   } catch (e) {
     errorEl.textContent = 'Erreur : ' + e.message;
     errorEl.style.display = 'block';
@@ -177,11 +200,14 @@ async function verifyCode() {
 async function loadAccount() {
   try {
     const data = await apiFetch('/api/me');
-    if (!data.success) throw new Error(data.error || 'Erreur');
-    currentClient = data.client;
-    showApp();
+    if (data.success && data.client) {
+      currentClient = data.client;
+      showApp();
+    }
+    // Sinon : le 401 (session invalide) a déjà été géré dans apiFetch (logout).
+    // On NE déconnecte pas sur une erreur transitoire réseau/serveur : la session est conservée.
   } catch (e) {
-    logout();
+    console.error(e);
   }
 }
 
@@ -257,6 +283,10 @@ async function saveProfile() {
     return;
   }
 
+  const btn = document.getElementById('saveProfileBtn');
+  btn.disabled = true;
+  const prevLabel = btn.textContent;
+  btn.textContent = 'Enregistrement...';
   try {
     const data = await apiFetch('/api/me', {
       method: 'PATCH',
@@ -270,6 +300,9 @@ async function saveProfile() {
   } catch (e) {
     errorEl.textContent = 'Erreur : ' + e.message;
     errorEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = prevLabel;
   }
 }
 
@@ -427,6 +460,7 @@ function attachAppointmentActions(container) {
     if (cancelBtn) {
       cancelBtn.addEventListener('click', async () => {
         if (!confirm('Annuler ce rendez-vous ?')) return;
+        cancelBtn.disabled = true;
         try {
           const data = await apiFetch(`/api/me/appointments/${id}`, {
             method: 'PATCH',
@@ -435,6 +469,7 @@ function attachAppointmentActions(container) {
           if (!data.success) throw new Error(data.error || 'Erreur');
           loadAppointments();
         } catch (e) {
+          cancelBtn.disabled = false;
           alert('Erreur : ' + e.message);
         }
       });
@@ -532,6 +567,11 @@ function initRescheduleCalendar(card, id) {
       if (!data.success) throw new Error(data.error || 'Erreur');
 
       let slots = data.slots;
+      const dur = Number(card.dataset.duration) || 30;
+      slots = slots.filter(s => {
+        const start = parseInt(s.slice(0, 2), 10) * 60 + parseInt(s.slice(3, 5), 10);
+        return start + dur <= 20 * 60;
+      });
       if (date === getParisDateString()) {
         const nowTime = getParisTimeString();
         slots = slots.filter(s => s > nowTime);
@@ -621,7 +661,7 @@ function renderServices() {
     card.type = 'button';
     card.className = 'booking-service-card';
     card.innerHTML = `<span class="booking-service-name">${service.name}</span>
-      <span class="booking-service-meta">${service.duration} min · ${service.price}</span>`;
+      <span class="booking-service-meta">${service.price}</span>`;
     card.addEventListener('click', () => {
       document.querySelectorAll('.booking-service-card').forEach(c => c.classList.remove('active'));
       card.classList.add('active');
@@ -718,6 +758,13 @@ async function loadSlots(date) {
     if (!data.success) throw new Error(data.error || 'Erreur');
 
     let slots = data.slots;
+
+    const dur = (bookingState.service && bookingState.service.duration) || 30;
+    slots = slots.filter(s => {
+      const start = parseInt(s.slice(0, 2), 10) * 60 + parseInt(s.slice(3, 5), 10);
+      return start + dur <= 20 * 60;
+    });
+
     if (date === getParisDateString()) {
       const nowTime = getParisTimeString();
       slots = slots.filter(slot => slot > nowTime);
@@ -776,10 +823,10 @@ function updateNextButton() {
 function renderSummary() {
   const container = document.getElementById('bookingSummary');
   container.innerHTML = `
-    <div class="summary-row"><strong>Prestation :</strong> ${bookingState.service.name}</div>
-    <div class="summary-row"><strong>Durée :</strong> ${bookingState.service.duration} min — ${bookingState.service.price}</div>
-    <div class="summary-row"><strong>Date :</strong> ${formatDate(bookingState.date)}</div>
-    <div class="summary-row"><strong>Heure :</strong> ${bookingState.time}</div>
+    <div class="summary-row"><strong>Prestation :</strong> ${escapeHtml(bookingState.service.name)}</div>
+    <div class="summary-row"><strong>Tarif :</strong> ${escapeHtml(bookingState.service.price)}</div>
+    <div class="summary-row"><strong>Date :</strong> ${escapeHtml(formatDate(bookingState.date))}</div>
+    <div class="summary-row"><strong>Heure :</strong> ${escapeHtml(bookingState.time)}</div>
     <div class="summary-row"><strong>Nom :</strong> ${escapeHtml(currentClient.name)}</div>
     <div class="summary-row"><strong>Téléphone :</strong> ${escapeHtml(currentClient.phone)}</div>
   `;

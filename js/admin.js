@@ -13,7 +13,7 @@ const SERVICES = {
   ],
 };
 
-const PHONE_REGEX = /^0[1-9](\s?\d{2}){4}$/;
+const PHONE_REGEX = /^(?:\+33\s?|0)[1-9](?:[\s.]?\d{2}){4}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 let currentFilter = 'all';
@@ -293,9 +293,8 @@ function renderAptCalendar() {
   const monthDate = new Date(aptCalendarYear, aptCalendarMonth, 1);
   title.textContent = monthDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 
-  const todayStr = getParisDateString();
-  const todayDate = new Date(todayStr + 'T00:00:00');
-  prevBtn.disabled = (aptCalendarYear === todayDate.getFullYear() && aptCalendarMonth === todayDate.getMonth());
+  // L'admin peut naviguer librement (saisie de RDV passés possible, ex. enregistrement a posteriori)
+  prevBtn.disabled = false;
 
   const firstDayIndex = (new Date(aptCalendarYear, aptCalendarMonth, 1).getDay() + 6) % 7;
   const daysInMonth = new Date(aptCalendarYear, aptCalendarMonth + 1, 0).getDate();
@@ -310,22 +309,15 @@ function renderAptCalendar() {
 
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = `${aptCalendarYear}-${String(aptCalendarMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    const isPast = dateStr < todayStr;
 
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'booking-calendar__day';
     btn.textContent = d;
-
-    if (isPast) {
-      btn.classList.add('disabled');
-      btn.disabled = true;
-    } else {
-      btn.addEventListener('click', () => {
-        aptSelectedDate = dateStr;
-        renderAptCalendar();
-      });
-    }
+    btn.addEventListener('click', () => {
+      aptSelectedDate = dateStr;
+      renderAptCalendar();
+    });
 
     if (dateStr === aptSelectedDate) btn.classList.add('active');
 
@@ -455,6 +447,8 @@ document.getElementById('appointmentModalSave').addEventListener('click', async 
     return showModalError(appointmentModalError, 'Adresse email invalide.');
   }
 
+  const saveBtn = document.getElementById('appointmentModalSave');
+  saveBtn.disabled = true;
   try {
     const payload = {
       service, category, date, time: time.slice(0, 5), duration, status,
@@ -472,6 +466,8 @@ document.getElementById('appointmentModalSave').addEventListener('click', async 
     }
   } catch (e) {
     showModalError(appointmentModalError, e.message);
+  } finally {
+    saveBtn.disabled = false;
   }
 });
 
@@ -572,12 +568,13 @@ document.getElementById('saveNotesBtn').addEventListener('click', async () => {
   const email = document.getElementById('clientEditEmail').value.trim();
   const notes = document.getElementById('clientNotes').value.trim();
 
-  if (!name || !phone) {
-    errorEl.textContent = 'Le nom et le téléphone sont obligatoires.';
+  if (!name) {
+    errorEl.textContent = 'Le nom est obligatoire.';
     errorEl.style.display = 'block';
     return;
   }
-  if (!PHONE_REGEX.test(phone)) {
+  // Le téléphone est facultatif (les clientes inscrites en ligne n'en ont pas toujours)
+  if (phone && !PHONE_REGEX.test(phone)) {
     errorEl.textContent = 'Numéro invalide. Format attendu : 06 12 34 56 78';
     errorEl.style.display = 'block';
     return;
@@ -588,6 +585,10 @@ document.getElementById('saveNotesBtn').addEventListener('click', async () => {
     return;
   }
 
+  const saveBtn = document.getElementById('saveNotesBtn');
+  const prevLabel = saveBtn.textContent;
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Enregistrement...';
   try {
     const data = await apiFetch(`/api/admin/clients/${currentClientId}`, {
       method: 'PATCH',
@@ -595,9 +596,14 @@ document.getElementById('saveNotesBtn').addEventListener('click', async () => {
     });
     if (!data.success) throw new Error(data.error);
     document.getElementById('clientDetailName').textContent = name || '(sans nom)';
+    saveBtn.textContent = 'Enregistré ✓';
+    setTimeout(() => { saveBtn.textContent = prevLabel; }, 1800);
   } catch (e) {
     errorEl.textContent = 'Erreur : ' + e.message;
     errorEl.style.display = 'block';
+    saveBtn.textContent = prevLabel;
+  } finally {
+    saveBtn.disabled = false;
   }
 });
 
@@ -647,6 +653,8 @@ document.getElementById('clientModalSave').addEventListener('click', async () =>
     return showModalError(clientModalError, 'Adresse email invalide.');
   }
 
+  const saveBtn = document.getElementById('clientModalSave');
+  saveBtn.disabled = true;
   try {
     const data = await apiFetch('/api/admin/clients', {
       method: 'POST',
@@ -657,6 +665,8 @@ document.getElementById('clientModalSave').addEventListener('click', async () =>
     loadClients();
   } catch (e) {
     showModalError(clientModalError, e.message);
+  } finally {
+    saveBtn.disabled = false;
   }
 });
 
@@ -667,14 +677,16 @@ function formatDate(dateStr) {
 }
 
 function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+  return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
 loginBtn.addEventListener('click', login);
 passwordInput.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
-logoutBtn.addEventListener('click', () => { clearToken(); showLogin(); });
+logoutBtn.addEventListener('click', () => {
+  apiFetch('/api/admin/logout', { method: 'POST' }).catch(() => {}); // révoque la session côté serveur
+  clearToken();
+  showLogin();
+});
 
 if (getToken()) {
   showApp();

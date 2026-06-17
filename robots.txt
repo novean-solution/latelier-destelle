@@ -1,2 +1,5 @@
 User-agent: *
 Disallow: /admin/
+Disallow: /compte.html
+
+Sitemap: https://www.latelierdestelle.fr/sitemap.xml
