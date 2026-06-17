@@ -30,16 +30,18 @@ const loginError = document.getElementById('loginError');
 const logoutBtn = document.getElementById('logoutBtn');
 const list = document.getElementById('appointmentsList');
 
+// localStorage (et non sessionStorage) pour que l'app installée (PWA) reste
+// connectée entre deux ouvertures, jusqu'à expiration de la session serveur (7 j).
 function getToken() {
-  return sessionStorage.getItem('adminToken');
+  return localStorage.getItem('adminToken');
 }
 
 function setToken(token) {
-  sessionStorage.setItem('adminToken', token);
+  localStorage.setItem('adminToken', token);
 }
 
 function clearToken() {
-  sessionStorage.removeItem('adminToken');
+  localStorage.removeItem('adminToken');
 }
 
 async function apiFetch(path, options = {}) {
