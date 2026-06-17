@@ -76,9 +76,55 @@ function esc(s) {
 }
 
 // ---------------------------------------------------------------------------
+// iCalendar (.ics) — pièce jointe email + flux d'abonnement agenda
+// ---------------------------------------------------------------------------
+function icsEscape(s) {
+  return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+}
+function icsStamp(ms) {
+  const d = new Date(ms), p = (n) => String(n).padStart(2, '0');
+  return `${d.getUTCFullYear()}${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}T${p(d.getUTCHours())}${p(d.getUTCMinutes())}${p(d.getUTCSeconds())}Z`;
+}
+function icsEvent(apt) {
+  const start = parisInstant(apt.date, apt.time);
+  const end = start + (Number(apt.duration) || 30) * 60000;
+  const lines = [
+    'BEGIN:VEVENT',
+    `UID:${apt.id}@latelier-destelle`,
+    `DTSTAMP:${icsStamp(Date.now())}`,
+    `DTSTART:${icsStamp(start)}`,
+    `DTEND:${icsStamp(end)}`,
+    `SUMMARY:${icsEscape((apt.service || 'Rendez-vous') + " — L'Atelier d'Estelle")}`,
+    'LOCATION:142 Seillière\\, 01340 Malafretaz',
+    `STATUS:${apt.status === 'confirmed' ? 'CONFIRMED' : (apt.status === 'cancelled' ? 'CANCELLED' : 'TENTATIVE')}`,
+  ];
+  const desc = [apt.clientName ? `Cliente : ${apt.clientName}` : '', apt.notes ? `Note : ${apt.notes}` : ''].filter(Boolean).join('\\n');
+  if (desc) lines.push(`DESCRIPTION:${icsEscape(desc)}`);
+  lines.push('END:VEVENT');
+  return lines.join('\r\n');
+}
+function wrapCalendar(name, eventsStr) {
+  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Novean//Atelier Estelle//FR', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', `X-WR-CALNAME:${icsEscape(name)}`, eventsStr, 'END:VCALENDAR'].filter(Boolean).join('\r\n');
+}
+export function buildEventICS(apt) {
+  return wrapCalendar("L'Atelier d'Estelle", icsEvent(apt));
+}
+export function buildFeedICS(appts, name) {
+  const events = (appts || []).filter((a) => a.status !== 'cancelled').map(icsEvent).join('\r\n');
+  return wrapCalendar(name || "L'Atelier d'Estelle", events);
+}
+function toBase64(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+const ICS_EVENTS = new Set(['client_booked', 'created_by_admin', 'confirm_by_admin', 'reschedule_by_admin', 'reschedule_by_client', 'reminder_day_before', 'reminder_hour_before']);
+
+// ---------------------------------------------------------------------------
 // Email (Resend)
 // ---------------------------------------------------------------------------
-export async function sendEmail(env, { to, subject, html, replyTo }) {
+export async function sendEmail(env, { to, subject, html, replyTo, attachments }) {
   if (!env.RESEND_API_KEY) {
     console.error('RESEND_API_KEY manquant - email non envoyé');
     return false;
@@ -91,6 +137,7 @@ export async function sendEmail(env, { to, subject, html, replyTo }) {
       html,
     };
     if (replyTo) payload.reply_to = replyTo;
+    if (attachments && attachments.length) payload.attachments = attachments;
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
@@ -234,7 +281,7 @@ async function pushToAdmin(env, payloadObj) {
 // ---------------------------------------------------------------------------
 // Préférences de notification de l'admin (table settings, singleton)
 // ---------------------------------------------------------------------------
-const DEFAULT_ADMIN_PREFS = { booking: true, cancellation: true, reschedule: true, newClient: true };
+const DEFAULT_ADMIN_PREFS = { booking: true, cancellation: true, reschedule: true, newClient: true, note: true };
 
 export async function getAdminPrefs(env) {
   try {
@@ -250,6 +297,7 @@ export async function setAdminPrefs(env, prefs) {
     cancellation: prefs.cancellation !== false,
     reschedule: prefs.reschedule !== false,
     newClient: prefs.newClient !== false,
+    note: prefs.note !== false,
   };
   await env.DB.prepare(
     "INSERT INTO settings (key, value) VALUES ('admin_notif_prefs', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
@@ -319,6 +367,11 @@ function buildMessages(eventType, apt, extra = {}) {
         client: { subject: 'Une note a été ajoutée à votre rendez-vous', html: emailLayout('Information sur votre rendez-vous', `<p>Bonjour ${esc(apt.clientName) || ''},</p><p>L'institut a ajouté une information à votre rendez-vous du <strong>${esc(when)}</strong> :</p><p style="background:#fff;border-radius:10px;padding:12px 14px;margin:14px 0;font-style:italic">« ${esc(apt.notes)} »</p>`), push: { title: 'Note ajoutée à votre RDV', body: when } },
         admin: null,
       };
+    case 'note_by_client':
+      return {
+        client: null,
+        admin: { pref: 'note', push: { title: '📝 Note d\'une cliente', body: `${name} : ${apt.notes ? String(apt.notes).slice(0, 90) : ''}` }, email: { subject: `Note — ${name} (${apt.date})`, html: emailLayout('Note ajoutée par une cliente', `<p><strong>${esc(name)}</strong> a ajouté une note à son rendez-vous du <strong>${esc(when)}</strong> (${esc(svc)}) :</p><p style="background:#fff;border-radius:10px;padding:12px 14px;font-style:italic">« ${esc(apt.notes)} »</p>`) } },
+      };
     case 'new_client':
       return {
         client: null,
@@ -351,7 +404,11 @@ export async function notify(env, eventType, apt, extra = {}) {
 
   if (m.client) {
     if (apt.clientEmail && EMAIL_RE.test(apt.clientEmail)) {
-      jobs.push(sendEmail(env, { to: apt.clientEmail, subject: m.client.subject, html: m.client.html, replyTo: env.OWNER_EMAIL }));
+      let attachments;
+      if (ICS_EVENTS.has(eventType) && apt.date && apt.time && apt.status !== 'cancelled') {
+        attachments = [{ filename: 'rendez-vous.ics', content: toBase64(buildEventICS(apt)) }];
+      }
+      jobs.push(sendEmail(env, { to: apt.clientEmail, subject: m.client.subject, html: m.client.html, replyTo: env.OWNER_EMAIL, attachments }));
     }
     if (m.client.push) {
       jobs.push(pushToClient(env, apt.clientId, { ...m.client.push, url: clientUrl, icon: '/icon-192.png', badge: '/icon-192.png', tag: 'rdv-' + (apt.id || '') }));

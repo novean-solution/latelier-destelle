@@ -26,11 +26,13 @@ CREATE TABLE IF NOT EXISTS clients (
     phone TEXT NOT NULL,
     email TEXT DEFAULT '',
     notes TEXT DEFAULT '',
-    createdAt TEXT NOT NULL
+    createdAt TEXT NOT NULL,
+    calendarToken TEXT DEFAULT ''
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_clients_phone ON clients(phone) WHERE phone != '';
 CREATE UNIQUE INDEX IF NOT EXISTS idx_clients_email ON clients(email) WHERE email != '';
+CREATE INDEX IF NOT EXISTS idx_clients_calendarToken ON clients(calendarToken) WHERE calendarToken != '';
 
 CREATE TABLE IF NOT EXISTS login_codes (
     id TEXT PRIMARY KEY,

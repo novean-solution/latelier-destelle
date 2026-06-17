@@ -65,6 +65,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const notifBtn = document.getElementById('notifToggleBtn');
   if (notifBtn) notifBtn.addEventListener('click', () => (notifBtn.dataset.on ? disableNotifications() : enableNotifications()));
 
+  const calSyncBtn = document.getElementById('calSyncBtn');
+  if (calSyncBtn) calSyncBtn.addEventListener('click', syncCalendarClient);
+
   renderServices();
   initCalendar();
 
@@ -393,6 +396,20 @@ async function disableNotifications() {
   finally { btn.disabled = false; refreshNotifUI(); }
 }
 
+async function syncCalendarClient() {
+  const state = document.getElementById('calState');
+  state.style.display = 'block';
+  state.textContent = 'Préparation du lien…';
+  try {
+    const data = await apiFetch('/api/me/calendar');
+    if (!data.url) throw new Error('indisponible');
+    state.innerHTML = 'Lien de votre agenda : <a href="' + data.url + '">ouvrir</a>. Sur ordinateur, copiez-le dans Google Agenda → « Autres agendas » → « À partir de l\'URL ».';
+    window.location.href = data.webcal;
+  } catch (e) {
+    state.textContent = 'Impossible de récupérer le lien agenda pour le moment.';
+  }
+}
+
 /* ===== Mes rendez-vous ===== */
 
 const APPOINTMENTS_PAGE_SIZE = 3;
@@ -506,6 +523,7 @@ function renderAppointmentCard(apt, readOnly) {
         ${readOnly ? '' : `
         <div class="apt-actions" style="${apt.notes ? 'margin-top:0.75rem;' : ''}">
           <button data-action="reschedule">Reporter</button>
+          <button data-action="note">${apt.notes ? 'Modifier ma note' : 'Ajouter une note'}</button>
           <button data-action="cancel" class="danger">Annuler</button>
         </div>
         <div class="reschedule-box" id="reschedule-${apt.id}">
@@ -557,6 +575,28 @@ function attachAppointmentActions(container) {
           loadAppointments();
         } catch (e) {
           cancelBtn.disabled = false;
+          alert('Erreur : ' + e.message);
+        }
+      });
+    }
+
+    const noteBtn = card.querySelector('[data-action="note"]');
+    if (noteBtn) {
+      noteBtn.addEventListener('click', async () => {
+        const currentEl = card.querySelector('.apt-notes');
+        const current = currentEl ? currentEl.textContent : '';
+        const note = prompt('Une information pour l\'institut (précision, empêchement…) :', current);
+        if (note === null) return;
+        noteBtn.disabled = true;
+        try {
+          const data = await apiFetch(`/api/me/appointments/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ action: 'note', notes: note }),
+          });
+          if (!data.success) throw new Error(data.error || 'Erreur');
+          loadAppointments();
+        } catch (e) {
+          noteBtn.disabled = false;
           alert('Erreur : ' + e.message);
         }
       });

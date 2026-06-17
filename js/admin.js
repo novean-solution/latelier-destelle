@@ -754,7 +754,19 @@ async function loadPrefs() {
     document.getElementById('prefCancellation').checked = p.cancellation !== false;
     document.getElementById('prefReschedule').checked = p.reschedule !== false;
     document.getElementById('prefNewClient').checked = p.newClient !== false;
+    document.getElementById('prefNote').checked = p.note !== false;
   } catch (e) { console.error(e); }
+}
+
+async function syncCalendar() {
+  const state = document.getElementById('calState');
+  state.textContent = 'Préparation du lien…';
+  try {
+    const data = await apiFetch('/api/admin/calendar');
+    if (!data.url) throw new Error('indisponible');
+    state.innerHTML = 'Lien d\'agenda : <a href="' + data.url + '">ouvrir / copier</a><br><span style="font-size:.85em">' + data.url + '</span>';
+    window.location.href = data.webcal; // ouvre l'app Agenda pour s'abonner
+  } catch (e) { state.textContent = 'Impossible de récupérer le lien agenda.'; }
 }
 
 async function savePrefs() {
@@ -767,6 +779,7 @@ async function savePrefs() {
       cancellation: document.getElementById('prefCancellation').checked,
       reschedule: document.getElementById('prefReschedule').checked,
       newClient: document.getElementById('prefNewClient').checked,
+      note: document.getElementById('prefNote').checked,
     }) });
     state.textContent = '✓ Préférences enregistrées.';
   } catch (e) { state.textContent = 'Erreur lors de l\'enregistrement.'; }
@@ -782,6 +795,8 @@ const notifEnableBtn = document.getElementById('notifEnableBtn');
 if (notifEnableBtn) notifEnableBtn.addEventListener('click', () => (notifEnableBtn.dataset.on ? disableAdminNotifications() : enableAdminNotifications()));
 const savePrefsBtn = document.getElementById('savePrefsBtn');
 if (savePrefsBtn) savePrefsBtn.addEventListener('click', savePrefs);
+const calSyncBtn = document.getElementById('calSyncBtn');
+if (calSyncBtn) calSyncBtn.addEventListener('click', syncCalendar);
 
 loginBtn.addEventListener('click', login);
 passwordInput.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });

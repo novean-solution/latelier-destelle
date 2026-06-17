@@ -5,7 +5,7 @@
 
 import {
   sendEmail, notify, runReminders, getAdminPrefs, setAdminPrefs,
-  saveSubscription, deleteSubscription,
+  saveSubscription, deleteSubscription, buildFeedICS,
 } from './notifications.js';
 
 const OPENING_HOURS = { start: 7, end: 20 }; // 7h - 20h, du lundi au vendredi
@@ -902,6 +902,13 @@ async function handleRequest(request, env, ctx) {
         return Response.json({ success: true }, { headers });
       }
 
+      if (body.action === 'note') {
+        const note = sanitize(body.notes || '');
+        await env.DB.prepare('UPDATE appointments SET notes = ? WHERE id = ?').bind(note, id).run();
+        if (note) fireNotify(ctx, env, 'note_by_client', { ...apt, notes: note });
+        return Response.json({ success: true }, { headers });
+      }
+
       if (body.date && body.time) {
         const newDate = sanitize(body.date);
         const newTime = sanitize(body.time);
@@ -952,6 +959,56 @@ async function handleRequest(request, env, ctx) {
     const body = await request.json().catch(() => ({}));
     await deleteSubscription(env, body.endpoint);
     return Response.json({ success: true }, { headers });
+  }
+
+  // --- Agenda (abonnement iCal) ---
+  const icsCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  // GET /api/me/calendar - URL d'abonnement agenda du client (crée un jeton si besoin)
+  if (url.pathname === '/api/me/calendar' && request.method === 'GET') {
+    const client = await getClientFromSession(request, env);
+    if (!client) return Response.json({ success: false, error: 'Non autorisé' }, { status: 401, headers });
+    let token = client.calendarToken;
+    if (!token) {
+      token = 'cal_' + crypto.randomUUID().replace(/-/g, '');
+      await env.DB.prepare('UPDATE clients SET calendarToken = ? WHERE id = ?').bind(token, client.id).run();
+    }
+    const httpsUrl = `https://${url.host}/api/me/calendar.ics?token=${token}`;
+    return Response.json({ success: true, url: httpsUrl, webcal: httpsUrl.replace(/^https:/, 'webcal:') }, { headers });
+  }
+
+  // GET /api/me/calendar.ics?token=... - flux iCal du client (lu par l'app Agenda)
+  if (url.pathname === '/api/me/calendar.ics' && request.method === 'GET') {
+    const token = url.searchParams.get('token') || '';
+    if (!token) return new Response('Missing token', { status: 401 });
+    const client = await env.DB.prepare("SELECT id FROM clients WHERE calendarToken = ? AND calendarToken != ''").bind(token).first();
+    if (!client) return new Response('Not found', { status: 404 });
+    const { results } = await env.DB.prepare('SELECT * FROM appointments WHERE clientId = ? AND date >= ? ORDER BY date, time').bind(client.id, icsCutoff).all();
+    const ics = buildFeedICS(results || [], "Mes rendez-vous — L'Atelier d'Estelle");
+    return new Response(ics, { headers: { 'Content-Type': 'text/calendar; charset=utf-8', 'Cache-Control': 'no-cache' } });
+  }
+
+  // GET /api/admin/calendar - URL d'abonnement agenda de l'institut
+  if (url.pathname === '/api/admin/calendar' && request.method === 'GET') {
+    if (!(await isAdmin(request, env))) return Response.json({ success: false, error: 'Non autorisé' }, { status: 401, headers });
+    let row = await env.DB.prepare("SELECT value FROM settings WHERE key = 'admin_calendar_token'").first();
+    let token = row && row.value;
+    if (!token) {
+      token = 'cal_' + crypto.randomUUID().replace(/-/g, '');
+      await env.DB.prepare("INSERT INTO settings (key, value) VALUES ('admin_calendar_token', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").bind(token).run();
+    }
+    const httpsUrl = `https://${url.host}/api/admin/calendar.ics?token=${token}`;
+    return Response.json({ success: true, url: httpsUrl, webcal: httpsUrl.replace(/^https:/, 'webcal:') }, { headers });
+  }
+
+  // GET /api/admin/calendar.ics?token=... - flux iCal de l'institut (tous les RDV)
+  if (url.pathname === '/api/admin/calendar.ics' && request.method === 'GET') {
+    const token = url.searchParams.get('token') || '';
+    const row = await env.DB.prepare("SELECT value FROM settings WHERE key = 'admin_calendar_token'").first();
+    if (!token || !row || row.value !== token) return new Response('Not found', { status: 404 });
+    const { results } = await env.DB.prepare('SELECT * FROM appointments WHERE date >= ? ORDER BY date, time').bind(icsCutoff).all();
+    const ics = buildFeedICS(results || [], "Agenda — L'Atelier d'Estelle");
+    return new Response(ics, { headers: { 'Content-Type': 'text/calendar; charset=utf-8', 'Cache-Control': 'no-cache' } });
   }
 
   return Response.json({ success: false, error: 'Not found' }, { status: 404, headers });
