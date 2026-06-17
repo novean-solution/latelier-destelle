@@ -16,7 +16,7 @@ rm -rf _dist && mkdir -p _dist
 # (allowlist abandonnée : on oubliait d'ajouter les nouveaux fichiers, ex. PWA.)
 for item in *; do
   case "$item" in
-    worker|_dist|node_modules|deploy.sh|wrangler.toml|*.sql|*.md|*.mjs|"A FAIRE.txt") continue ;;
+    worker|_dist|node_modules|deploy.sh|wrangler.toml|*.sql|*.md|*.mjs|*.cjs|"A FAIRE.txt") continue ;;
   esac
   cp -r "$item" _dist/
 done
