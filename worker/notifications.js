@@ -283,7 +283,7 @@ async function encryptPayload(payloadStr, p256dhB64, authB64) {
 
 // Envoie un push à UN abonnement. Supprime l'abonnement si 404/410 (expiré).
 async function sendOnePush(env, sub, payloadObj) {
-  if (!env.VAPID_PRIVATE_KEY || !env.VAPID_PUBLIC_KEY) return 0; // push non configuré -> no-op
+  if (!env.VAPID_PRIVATE_KEY || !env.VAPID_PUBLIC_KEY) { console.log('[push] VAPID non configuré'); return 0; }
   try {
     const endpoint = sub.endpoint;
     const audience = new URL(endpoint).origin;
@@ -302,12 +302,16 @@ async function sendOnePush(env, sub, payloadObj) {
       },
       body,
     });
+    if (res.status >= 400) {
+      const txt = await res.text().catch(() => '');
+      console.warn('[push] échec', new URL(endpoint).host, res.status, txt.slice(0, 120));
+    }
     if (res.status === 404 || res.status === 410) {
       await env.DB.prepare('DELETE FROM push_subscriptions WHERE endpoint = ?').bind(endpoint).run().catch(() => {});
     }
     return res.status;
   } catch (e) {
-    console.error('Erreur push', e);
+    console.error('[push] Erreur', e && e.message, e && e.stack);
     return 0;
   }
 }
