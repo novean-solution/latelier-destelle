@@ -29,17 +29,29 @@ if (scrollProgress) {
 const burger = document.getElementById('burger');
 const nav = document.getElementById('nav');
 if (burger && nav) {
-  burger.setAttribute('aria-expanded', 'false');
-  burger.addEventListener('click', () => {
-    const open = nav.classList.toggle('open');
+  const setMenu = (open) => {
+    nav.classList.toggle('open', open);
     burger.classList.toggle('open', open);
     burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    burger.setAttribute('aria-label', open ? 'Fermer le menu' : 'Menu');
+  };
+  setMenu(false);
+
+  // Le burger ouvre/ferme (devient une croix une fois ouvert)
+  burger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setMenu(!nav.classList.contains('open'));
   });
-  nav.querySelectorAll('a').forEach(link => link.addEventListener('click', () => {
-    nav.classList.remove('open');
-    burger.classList.remove('open');
-    burger.setAttribute('aria-expanded', 'false');
-  }));
+  // Fermer en cliquant sur un lien
+  nav.querySelectorAll('a').forEach(link => link.addEventListener('click', () => setMenu(false)));
+  // Fermer en cliquant ailleurs sur la page
+  document.addEventListener('click', (e) => {
+    if (nav.classList.contains('open') && !nav.contains(e.target) && !burger.contains(e.target)) setMenu(false);
+  });
+  // Fermer avec la touche Échap
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && nav.classList.contains('open')) setMenu(false);
+  });
 }
 
 // Popup de prise de rendez-vous

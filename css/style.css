@@ -250,6 +250,10 @@ h1, h2, h3 { font-family: var(--font-heading); color: var(--color-dark); font-we
   background: var(--color-dark);
   transition: 0.25s;
 }
+/* Burger ouvert → croix (X) pour fermer */
+.burger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.burger.open span:nth-child(2) { opacity: 0; }
+.burger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
 /* Hero */
 .hero {
