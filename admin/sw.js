@@ -3,7 +3,7 @@
 // (donc les mises à jour s'appliquent immédiatement), et on retombe sur le cache
 // uniquement en cas de coupure réseau.
 
-const CACHE = 'atelier-admin-v1';
+const CACHE = 'atelier-admin-v2';
 const SHELL = [
   '/admin/',
   '/admin/index.html',
@@ -43,4 +43,28 @@ self.addEventListener('fetch', (e) => {
       return cached || caches.match('/admin/index.html');
     }
   })());
+});
+
+// --- Web Push : réception et clic sur une notification ---
+self.addEventListener('push', (e) => {
+  let data = {};
+  try { data = e.data ? e.data.json() : {}; } catch (_) { data = { body: e.data ? e.data.text() : '' }; }
+  const title = data.title || "L'Atelier d'Estelle";
+  e.waitUntil(self.registration.showNotification(title, {
+    body: data.body || '',
+    icon: data.icon || '/admin/icon-192.png',
+    badge: data.badge || '/admin/icon-192.png',
+    tag: data.tag,
+    renotify: !!data.tag,
+    data: { url: data.url || '/admin/' },
+  }));
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const target = (e.notification.data && e.notification.data.url) || '/admin/';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    for (const c of list) { if (c.url.includes('/admin') && 'focus' in c) return c.focus(); }
+    return self.clients.openWindow ? self.clients.openWindow(target) : null;
+  }));
 });

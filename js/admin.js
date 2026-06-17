@@ -105,6 +105,9 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     if (btn.dataset.tab === 'appointments') {
       switchView('viewAppointments');
       loadAppointments();
+    } else if (btn.dataset.tab === 'settings') {
+      switchView('viewSettings');
+      initSettings();
     } else {
       switchView('viewClients');
       loadClients();
@@ -681,6 +684,104 @@ function formatDate(dateStr) {
 function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
+
+/* ===== Réglages : notifications push + préférences ===== */
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  const arr = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+  return arr;
+}
+
+async function refreshAdminNotifUI() {
+  const btn = document.getElementById('notifEnableBtn');
+  const state = document.getElementById('notifState');
+  if (!btn || !state) return;
+  const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  if (!supported) { btn.style.display = 'none'; state.textContent = 'Les notifications ne sont pas disponibles sur ce navigateur.'; return; }
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if (/iPhone|iPad|iPod/.test(navigator.userAgent) && !standalone) {
+    btn.style.display = 'none';
+    state.textContent = 'Sur iPhone, installez d\'abord l\'application (bouton « Installer ») pour activer les notifications.';
+    return;
+  }
+  if (Notification.permission === 'denied') { btn.style.display = 'none'; state.textContent = 'Notifications bloquées dans les réglages du navigateur.'; return; }
+  let sub = null;
+  try { const reg = await navigator.serviceWorker.ready; sub = await reg.pushManager.getSubscription(); } catch (_) {}
+  btn.style.display = 'inline-block';
+  if (sub) { btn.textContent = 'Désactiver les notifications'; btn.dataset.on = '1'; state.textContent = '🔔 Notifications activées sur cet appareil.'; }
+  else { btn.textContent = 'Activer les notifications'; btn.dataset.on = ''; state.textContent = ''; }
+}
+
+async function enableAdminNotifications() {
+  const btn = document.getElementById('notifEnableBtn');
+  const state = document.getElementById('notifState');
+  btn.disabled = true;
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { state.textContent = 'Permission refusée.'; return; }
+    const reg = await navigator.serviceWorker.ready;
+    const { key } = await fetch(`${BOOKING_API}/api/push/public-key`).then(r => r.json());
+    if (!key) throw new Error('clé indisponible');
+    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(key) });
+    const j = sub.toJSON();
+    await apiFetch('/api/admin/push', { method: 'POST', body: JSON.stringify({ endpoint: sub.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, userAgent: navigator.userAgent }) });
+  } catch (e) { console.error(e); state.textContent = 'Impossible d\'activer les notifications pour le moment.'; }
+  finally { btn.disabled = false; refreshAdminNotifUI(); }
+}
+
+async function disableAdminNotifications() {
+  const btn = document.getElementById('notifEnableBtn');
+  btn.disabled = true;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      await apiFetch('/api/admin/push', { method: 'DELETE', body: JSON.stringify({ endpoint: sub.endpoint }) }).catch(() => {});
+      await sub.unsubscribe();
+    }
+  } catch (e) { console.error(e); }
+  finally { btn.disabled = false; refreshAdminNotifUI(); }
+}
+
+async function loadPrefs() {
+  try {
+    const data = await apiFetch('/api/admin/notif-prefs');
+    const p = data.prefs || {};
+    document.getElementById('prefBooking').checked = p.booking !== false;
+    document.getElementById('prefCancellation').checked = p.cancellation !== false;
+    document.getElementById('prefReschedule').checked = p.reschedule !== false;
+    document.getElementById('prefNewClient').checked = p.newClient !== false;
+  } catch (e) { console.error(e); }
+}
+
+async function savePrefs() {
+  const btn = document.getElementById('savePrefsBtn');
+  const state = document.getElementById('prefsState');
+  btn.disabled = true;
+  try {
+    await apiFetch('/api/admin/notif-prefs', { method: 'PUT', body: JSON.stringify({
+      booking: document.getElementById('prefBooking').checked,
+      cancellation: document.getElementById('prefCancellation').checked,
+      reschedule: document.getElementById('prefReschedule').checked,
+      newClient: document.getElementById('prefNewClient').checked,
+    }) });
+    state.textContent = '✓ Préférences enregistrées.';
+  } catch (e) { state.textContent = 'Erreur lors de l\'enregistrement.'; }
+  finally { btn.disabled = false; }
+}
+
+function initSettings() {
+  refreshAdminNotifUI();
+  loadPrefs();
+}
+
+const notifEnableBtn = document.getElementById('notifEnableBtn');
+if (notifEnableBtn) notifEnableBtn.addEventListener('click', () => (notifEnableBtn.dataset.on ? disableAdminNotifications() : enableAdminNotifications()));
+const savePrefsBtn = document.getElementById('savePrefsBtn');
+if (savePrefsBtn) savePrefsBtn.addEventListener('click', savePrefs);
 
 loginBtn.addEventListener('click', login);
 passwordInput.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });

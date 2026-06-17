@@ -62,6 +62,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('saveProfileBtn').addEventListener('click', saveProfile);
 
+  const notifBtn = document.getElementById('notifToggleBtn');
+  if (notifBtn) notifBtn.addEventListener('click', () => (notifBtn.dataset.on ? disableNotifications() : enableNotifications()));
+
   renderServices();
   initCalendar();
 
@@ -234,6 +237,7 @@ function showApp() {
 
   updateProfileHeader();
   loadAppointments();
+  refreshNotifUI();
 }
 
 function updateProfileHeader() {
@@ -304,6 +308,89 @@ async function saveProfile() {
     btn.disabled = false;
     btn.textContent = prevLabel;
   }
+}
+
+/* ===== Notifications (Web Push) ===== */
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  const arr = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+  return arr;
+}
+
+async function refreshNotifUI() {
+  const btn = document.getElementById('notifToggleBtn');
+  const state = document.getElementById('notifState');
+  if (!btn || !state) return;
+  const show = (msg) => { state.style.display = 'block'; state.textContent = msg; };
+
+  const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  if (!supported) { btn.style.display = 'none'; show('Les notifications ne sont pas disponibles sur ce navigateur — vous recevez tout par email.'); return; }
+
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if (/iPhone|iPad|iPod/.test(navigator.userAgent) && !standalone) {
+    btn.style.display = 'none';
+    show('Sur iPhone, installez d\'abord l\'application (bouton « Installer ») pour activer les notifications. Vous recevez aussi tout par email.');
+    return;
+  }
+  if (Notification.permission === 'denied') {
+    btn.style.display = 'none';
+    show('Notifications bloquées dans les réglages du navigateur — vous recevez tout par email.');
+    return;
+  }
+
+  let sub = null;
+  try { const reg = await navigator.serviceWorker.ready; sub = await reg.pushManager.getSubscription(); } catch (_) {}
+  btn.style.display = 'inline-block';
+  if (sub) {
+    btn.textContent = 'Désactiver les notifications';
+    btn.dataset.on = '1';
+    show('🔔 Notifications activées sur cet appareil.');
+  } else {
+    btn.textContent = 'Activer les notifications';
+    btn.dataset.on = '';
+    state.style.display = 'none';
+  }
+}
+
+async function enableNotifications() {
+  const btn = document.getElementById('notifToggleBtn');
+  const state = document.getElementById('notifState');
+  btn.disabled = true;
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { state.style.display = 'block'; state.textContent = 'Permission refusée.'; return; }
+    const reg = await navigator.serviceWorker.ready;
+    const { key } = await fetch(`${BOOKING_API}/api/push/public-key`).then(r => r.json());
+    if (!key) throw new Error('clé indisponible');
+    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(key) });
+    const j = sub.toJSON();
+    await apiFetch('/api/me/push', { method: 'POST', body: JSON.stringify({ endpoint: sub.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, userAgent: navigator.userAgent }) });
+  } catch (e) {
+    console.error(e);
+    state.style.display = 'block';
+    state.textContent = 'Impossible d\'activer les notifications pour le moment.';
+  } finally {
+    btn.disabled = false;
+    refreshNotifUI();
+  }
+}
+
+async function disableNotifications() {
+  const btn = document.getElementById('notifToggleBtn');
+  btn.disabled = true;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      await apiFetch('/api/me/push', { method: 'DELETE', body: JSON.stringify({ endpoint: sub.endpoint }) }).catch(() => {});
+      await sub.unsubscribe();
+    }
+  } catch (e) { console.error(e); }
+  finally { btn.disabled = false; refreshNotifUI(); }
 }
 
 /* ===== Mes rendez-vous ===== */

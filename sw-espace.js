@@ -3,7 +3,7 @@
 // (les mises à jour s'appliquent immédiatement), et on retombe sur le cache
 // uniquement en cas de coupure réseau.
 
-const CACHE = 'atelier-espace-v2';
+const CACHE = 'atelier-espace-v3';
 const SHELL = [
   '/compte',
   '/js/compte.js',
@@ -45,4 +45,28 @@ self.addEventListener('fetch', (e) => {
       return cached || caches.match('/compte');
     }
   })());
+});
+
+// --- Web Push : réception et clic sur une notification ---
+self.addEventListener('push', (e) => {
+  let data = {};
+  try { data = e.data ? e.data.json() : {}; } catch (_) { data = { body: e.data ? e.data.text() : '' }; }
+  const title = data.title || "L'Atelier d'Estelle";
+  e.waitUntil(self.registration.showNotification(title, {
+    body: data.body || '',
+    icon: data.icon || '/icon-192.png',
+    badge: data.badge || '/icon-192.png',
+    tag: data.tag,
+    renotify: !!data.tag,
+    data: { url: data.url || '/compte' },
+  }));
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const target = (e.notification.data && e.notification.data.url) || '/compte';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    for (const c of list) { if (c.url.includes('/compte') && 'focus' in c) return c.focus(); }
+    return self.clients.openWindow ? self.clients.openWindow(target) : null;
+  }));
 });

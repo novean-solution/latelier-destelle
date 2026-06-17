@@ -579,6 +579,7 @@
   <div class="tabs">
     <button class="tab-btn active" data-tab="appointments">Rendez-vous</button>
     <button class="tab-btn" data-tab="clients">Clients</button>
+    <button class="tab-btn" data-tab="settings">Réglages</button>
   </div>
 
   <!-- Vue Rendez-vous -->
@@ -640,6 +641,24 @@
     </div>
     <div class="client-section-title">Historique des rendez-vous</div>
     <div class="appointments-list" id="clientAppointmentsList"></div>
+  </div>
+
+  <!-- Vue Réglages -->
+  <div class="view" id="viewSettings">
+    <h2 class="section-subtitle">Notifications sur cet appareil</h2>
+    <p style="color:#8a7a7c;margin:0 0 .9rem;max-width:480px">Recevez une notification directement sur ce téléphone (ou cet ordinateur) pour les événements cochés ci-dessous. À activer sur chaque appareil où vous voulez être prévenue.</p>
+    <button class="add-btn" id="notifEnableBtn" style="display:none">Activer les notifications</button>
+    <p id="notifState" style="margin:.6rem 0 0;color:#8a7a7c"></p>
+
+    <h2 class="section-subtitle" style="margin-top:1.8rem">Que souhaitez-vous recevoir ?</h2>
+    <div style="display:flex;flex-direction:column;gap:.7rem;max-width:380px">
+      <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer"><input type="checkbox" id="prefBooking" checked style="width:18px;height:18px;accent-color:#b06f86"> Nouvelle réservation</label>
+      <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer"><input type="checkbox" id="prefCancellation" checked style="width:18px;height:18px;accent-color:#b06f86"> Annulation par une cliente</label>
+      <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer"><input type="checkbox" id="prefReschedule" checked style="width:18px;height:18px;accent-color:#b06f86"> Report par une cliente</label>
+      <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer"><input type="checkbox" id="prefNewClient" checked style="width:18px;height:18px;accent-color:#b06f86"> Nouvelle cliente</label>
+    </div>
+    <button class="save-btn" id="savePrefsBtn" style="margin-top:1.1rem;flex:none;padding:0.6rem 1.5rem">Enregistrer mes préférences</button>
+    <p id="prefsState" style="margin:.6rem 0 0;color:#8a7a7c"></p>
   </div>
   </div>
 </div>
