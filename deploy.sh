@@ -12,7 +12,14 @@ npx wrangler deploy
 
 echo "2/2 — Déploiement du front (Pages, sans exposer le code du worker)…"
 rm -rf _dist && mkdir -p _dist
-cp -r index.html compte.html robots.txt sitemap.xml favicon.svg css js images admin _dist/
+# Copie tout le dépôt SAUF le code serveur et les fichiers de dev/déploiement.
+# (allowlist abandonnée : on oubliait d'ajouter les nouveaux fichiers, ex. PWA.)
+for item in *; do
+  case "$item" in
+    worker|_dist|node_modules|deploy.sh|wrangler.toml|*.sql|*.md|*.mjs|"A FAIRE.txt") continue ;;
+  esac
+  cp -r "$item" _dist/
+done
 npx wrangler pages deploy _dist --project-name=latelier-destelle --branch=master --commit-dirty=true
 rm -rf _dist
 

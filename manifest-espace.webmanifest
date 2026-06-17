@@ -1,0 +1,18 @@
+{
+  "id": "/compte.html",
+  "name": "L'Atelier d'Estelle — Mon espace",
+  "short_name": "Mon espace",
+  "description": "Gérez vos rendez-vous à L'Atelier d'Estelle.",
+  "start_url": "/compte.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fdf8f6",
+  "theme_color": "#b06f86",
+  "lang": "fr",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
