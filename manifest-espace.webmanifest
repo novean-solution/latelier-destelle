@@ -1,9 +1,9 @@
 {
-  "id": "/compte.html",
+  "id": "/compte",
   "name": "L'Atelier d'Estelle — Mon espace",
   "short_name": "Mon espace",
   "description": "Gérez vos rendez-vous à L'Atelier d'Estelle.",
-  "start_url": "/compte.html",
+  "start_url": "/compte",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

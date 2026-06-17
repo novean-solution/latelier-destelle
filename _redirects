@@ -1,0 +1,3 @@
+# Garde-fou : le code serveur ne doit jamais être servi publiquement.
+# (le dossier worker/ est déjà exclu du déploiement ; ceci couvre tout résidu)
+/worker/* / 301

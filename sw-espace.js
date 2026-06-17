@@ -3,9 +3,9 @@
 // (les mises à jour s'appliquent immédiatement), et on retombe sur le cache
 // uniquement en cas de coupure réseau.
 
-const CACHE = 'atelier-espace-v1';
+const CACHE = 'atelier-espace-v2';
 const SHELL = [
-  '/compte.html',
+  '/compte',
   '/js/compte.js',
   '/css/style.css',
   '/favicon.svg',
@@ -32,7 +32,7 @@ self.addEventListener('fetch', (e) => {
   // On ne touche pas aux requêtes API (autre origine : le Worker) ni aux non-GET
   if (req.method !== 'GET' || url.origin !== self.location.origin) return;
   // On laisse le site vitrine (autres pages) au navigateur : on ne gère que l'espace
-  if (req.mode === 'navigate' && url.pathname !== '/compte.html') return;
+  if (req.mode === 'navigate' && url.pathname !== '/compte') return;
 
   e.respondWith((async () => {
     try {
@@ -42,7 +42,7 @@ self.addEventListener('fetch', (e) => {
       return fresh;
     } catch (_) {
       const cached = await caches.match(req);
-      return cached || caches.match('/compte.html');
+      return cached || caches.match('/compte');
     }
   })());
 });
