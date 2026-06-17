@@ -11,7 +11,9 @@ CREATE TABLE IF NOT EXISTS appointments (
     clientEmail TEXT DEFAULT '',
     notes TEXT DEFAULT '',
     status TEXT DEFAULT 'pending',
-    createdAt TEXT NOT NULL
+    createdAt TEXT NOT NULL,
+    reminderDayBeforeSentAt TEXT DEFAULT '',
+    reminderHourBeforeSentAt TEXT DEFAULT ''
 );
 
 CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(date);
@@ -54,3 +56,22 @@ CREATE TABLE IF NOT EXISTS admin_sessions (
     createdAt TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_admin_sessions_expires ON admin_sessions(expiresAt);
+
+-- Abonnements Web Push (admin et clients)
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+    id TEXT PRIMARY KEY,
+    ownerType TEXT NOT NULL,        -- 'admin' | 'client'
+    clientId TEXT DEFAULT '',       -- rempli si ownerType = 'client'
+    endpoint TEXT NOT NULL UNIQUE,
+    p256dh TEXT NOT NULL,
+    auth TEXT NOT NULL,
+    userAgent TEXT DEFAULT '',
+    createdAt TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_push_owner ON push_subscriptions(ownerType, clientId);
+
+-- Réglages (clé/valeur) — ex. préférences de notification de l'institut
+CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);

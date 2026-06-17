@@ -3,6 +3,11 @@
  * API D1 minimaliste : créneaux disponibles + gestion des rendez-vous
  */
 
+import {
+  sendEmail, notify, runReminders, getAdminPrefs, setAdminPrefs,
+  saveSubscription, deleteSubscription,
+} from './notifications.js';
+
 const OPENING_HOURS = { start: 7, end: 20 }; // 7h - 20h, du lundi au vendredi
 const SLOT_STEP_MINUTES = 30;
 
@@ -25,7 +30,7 @@ function corsHeaders(request, env) {
   }
   return {
     'Access-Control-Allow-Origin': allow || STATIC_ALLOWED_ORIGINS[0],
-    'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Vary': 'Origin',
     'Content-Type': 'application/json',
@@ -74,25 +79,6 @@ function validateSlot(date, time, duration) {
   return null;
 }
 
-// Notifie l'institut par email d'un nouveau rendez-vous (non bloquant).
-async function notifyOwnerNewAppointment(env, apt) {
-  const to = env.OWNER_EMAIL;
-  if (!to) return;
-  const when = `${apt.date} à ${apt.time}`;
-  await sendEmail(env, {
-    to,
-    subject: `Nouveau rendez-vous — ${apt.clientName} (${apt.date})`,
-    html: `<p>Nouveau rendez-vous pris en ligne :</p>
-           <ul>
-             <li><strong>Cliente :</strong> ${apt.clientName} — ${apt.clientPhone}${apt.clientEmail ? ' — ' + apt.clientEmail : ''}</li>
-             <li><strong>Prestation :</strong> ${apt.service} (${apt.category})</li>
-             <li><strong>Quand :</strong> ${when} (${apt.duration} min)</li>
-             ${apt.notes ? `<li><strong>Note :</strong> ${apt.notes}</li>` : ''}
-           </ul>
-           <p>Statut : ${apt.status}. Retrouvez-le dans votre espace Administration.</p>`,
-  }).catch(() => {});
-}
-
 function sanitize(text) {
   if (typeof text !== 'string') return '';
   return text.replace(/[<>]/g, '').trim();
@@ -129,33 +115,6 @@ async function getClientFromSession(request, env) {
   return env.DB.prepare('SELECT * FROM clients WHERE id = ?').bind(session.clientId).first();
 }
 
-// Envoie un email via Resend
-async function sendEmail(env, { to, subject, html }) {
-  if (!env.RESEND_API_KEY) {
-    console.error('RESEND_API_KEY manquant - email non envoyé');
-    return false;
-  }
-  try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: env.FROM_EMAIL || "L'atelier d'Estelle <onboarding@resend.dev>",
-        to,
-        subject,
-        html,
-      }),
-    });
-    return res.ok;
-  } catch (e) {
-    console.error('Erreur envoi email', e);
-    return false;
-  }
-}
-
 function getParisDateTimeString() {
   return new Intl.DateTimeFormat('fr-CA', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })
     .format(new Date()).replace(', ', 'T');
@@ -176,10 +135,11 @@ function generateDaySlots(dateStr) {
   return slots;
 }
 
-// Trouve un client existant par téléphone, sinon le crée
+// Trouve un client existant par téléphone, sinon le crée.
+// Renvoie { id, created } — `created` vaut true si une nouvelle fiche a été créée.
 async function findOrCreateClient(env, { name, phone, email }) {
   const cleanPhone = sanitize(phone);
-  if (!cleanPhone) return '';
+  if (!cleanPhone) return { id: '', created: false };
 
   const existing = await env.DB.prepare('SELECT id, name, email FROM clients WHERE phone = ?').bind(cleanPhone).first();
   if (existing) {
@@ -189,7 +149,7 @@ async function findOrCreateClient(env, { name, phone, email }) {
     if (newName !== existing.name || newEmail !== existing.email) {
       await env.DB.prepare('UPDATE clients SET name = ?, email = ? WHERE id = ?').bind(newName, newEmail, existing.id).run();
     }
-    return existing.id;
+    return { id: existing.id, created: false };
   }
 
   const id = 'cli_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
@@ -197,10 +157,16 @@ async function findOrCreateClient(env, { name, phone, email }) {
     INSERT INTO clients (id, name, phone, email, notes, createdAt)
     VALUES (?, ?, ?, ?, '', ?)
   `).bind(id, sanitize(name || ''), cleanPhone, sanitize(email || ''), new Date().toISOString()).run();
-  return id;
+  return { id, created: true };
 }
 
-async function handleRequest(request, env) {
+// Lance une notification en arrière-plan (n'allonge pas la réponse HTTP).
+function fireNotify(ctx, env, eventType, apt, extra) {
+  const p = notify(env, eventType, apt, extra).catch((e) => console.error('notify', eventType, e));
+  if (ctx && ctx.waitUntil) ctx.waitUntil(p);
+}
+
+async function handleRequest(request, env, ctx) {
   const url = new URL(request.url);
   const headers = corsHeaders(request, env);
 
@@ -290,7 +256,7 @@ async function handleRequest(request, env) {
         return Response.json({ success: false, error: 'Ce créneau vient d\'être réservé, merci d\'en choisir un autre.' }, { status: 409, headers });
       }
 
-      const clientId = await findOrCreateClient(env, {
+      const { id: clientId, created: isNewClient } = await findOrCreateClient(env, {
         name: appointment.clientName, phone: appointment.clientPhone, email: appointment.clientEmail,
       });
 
@@ -303,7 +269,9 @@ async function handleRequest(request, env) {
         appointment.notes, appointment.status, appointment.createdAt
       ).run();
 
-      await notifyOwnerNewAppointment(env, appointment);
+      const aptN = { ...appointment, clientId };
+      fireNotify(ctx, env, 'client_booked', aptN);
+      if (isNewClient) fireNotify(ctx, env, 'new_client', aptN);
       return Response.json({ success: true, appointment }, { headers });
     } catch (e) {
       console.error(e);
@@ -346,7 +314,7 @@ async function handleRequest(request, env) {
     };
 
     try {
-      const clientId = await findOrCreateClient(env, {
+      const { id: clientId } = await findOrCreateClient(env, {
         name: appointment.clientName, phone: appointment.clientPhone, email: appointment.clientEmail,
       });
 
@@ -359,6 +327,8 @@ async function handleRequest(request, env) {
         appointment.notes, appointment.status, appointment.createdAt
       ).run();
 
+      // L'institut crée le RDV : on prévient la cliente (pas d'auto-notification de l'admin).
+      fireNotify(ctx, env, 'created_by_admin', { ...appointment, clientId });
       return Response.json({ success: true, appointment }, { headers });
     } catch (e) {
       console.error(e);
@@ -461,6 +431,7 @@ async function handleRequest(request, env) {
 
       await env.DB.prepare('UPDATE clients SET name = ?, phone = ?, email = ?, notes = ? WHERE id = ?')
         .bind(name, phone, email, notes, id).run();
+      // NB : la note "fiche client" est interne à l'institut → pas de notification au client.
       return Response.json({ success: true }, { headers });
     } catch (e) {
       console.error(e);
@@ -519,6 +490,55 @@ async function handleRequest(request, env) {
     }
   }
 
+  // GET /api/admin/notif-prefs - préférences de notification de l'institut
+  if (url.pathname === '/api/admin/notif-prefs' && request.method === 'GET') {
+    if (!(await isAdmin(request, env))) {
+      return Response.json({ success: false, error: 'Non autorisé' }, { status: 401, headers });
+    }
+    const prefs = await getAdminPrefs(env);
+    return Response.json({ success: true, prefs }, { headers });
+  }
+
+  // PUT /api/admin/notif-prefs - enregistre les préférences (cases à cocher)
+  if (url.pathname === '/api/admin/notif-prefs' && request.method === 'PUT') {
+    if (!(await isAdmin(request, env))) {
+      return Response.json({ success: false, error: 'Non autorisé' }, { status: 401, headers });
+    }
+    const body = await request.json().catch(() => ({}));
+    try {
+      const prefs = await setAdminPrefs(env, body);
+      return Response.json({ success: true, prefs }, { headers });
+    } catch (e) {
+      console.error(e);
+      return Response.json({ success: false, error: 'Une erreur interne est survenue.' }, { status: 500, headers });
+    }
+  }
+
+  // POST /api/admin/push - enregistre un abonnement Web Push pour l'institut
+  if (url.pathname === '/api/admin/push' && request.method === 'POST') {
+    if (!(await isAdmin(request, env))) {
+      return Response.json({ success: false, error: 'Non autorisé' }, { status: 401, headers });
+    }
+    const body = await request.json().catch(() => ({}));
+    try {
+      await saveSubscription(env, { ownerType: 'admin', clientId: '', endpoint: body.endpoint, p256dh: body.p256dh, auth: body.auth, userAgent: body.userAgent });
+      return Response.json({ success: true }, { headers });
+    } catch (e) {
+      console.error(e);
+      return Response.json({ success: false, error: 'Une erreur interne est survenue.' }, { status: 500, headers });
+    }
+  }
+
+  // DELETE /api/admin/push
+  if (url.pathname === '/api/admin/push' && request.method === 'DELETE') {
+    if (!(await isAdmin(request, env))) {
+      return Response.json({ success: false, error: 'Non autorisé' }, { status: 401, headers });
+    }
+    const body = await request.json().catch(() => ({}));
+    await deleteSubscription(env, body.endpoint);
+    return Response.json({ success: true }, { headers });
+  }
+
   // GET /api/admin/appointments - liste tous les rendez-vous
   if (url.pathname === '/api/admin/appointments' && request.method === 'GET') {
     if (!(await isAdmin(request, env))) {
@@ -557,18 +577,39 @@ async function handleRequest(request, env) {
         if (!existing) {
           return Response.json({ success: false, error: 'Rendez-vous introuvable' }, { status: 404, headers });
         }
-        const clientId = await findOrCreateClient(env, {
+        const { id: clientId } = await findOrCreateClient(env, {
           name: sanitize(clientName), phone: sanitize(clientPhone), email: sanitize(clientEmail || ''),
         });
+        const newStatus = status !== undefined ? status : existing.status;
+        const newApt = {
+          id, service: sanitize(service), category: sanitize(category), date: sanitize(date), time: sanitize(time),
+          duration: Number(duration) || 30, clientId, clientName: sanitize(clientName),
+          clientEmail: sanitize(clientEmail || ''), notes: sanitize(notes || ''), status: newStatus,
+        };
         await env.DB.prepare(`
           UPDATE appointments
           SET service = ?, category = ?, date = ?, time = ?, duration = ?, clientId = ?, clientName = ?, clientPhone = ?, clientEmail = ?, notes = ?, status = ?
           WHERE id = ?
         `).bind(
-          sanitize(service), sanitize(category), sanitize(date), sanitize(time), Number(duration) || 30,
-          clientId, sanitize(clientName), sanitize(clientPhone), sanitize(clientEmail || ''), sanitize(notes || ''),
-          status !== undefined ? status : existing.status, id
+          newApt.service, sanitize(category), newApt.date, newApt.time, newApt.duration,
+          clientId, newApt.clientName, sanitize(clientPhone), newApt.clientEmail, newApt.notes,
+          newStatus, id
         ).run();
+
+        // Notifications selon ce qui a changé
+        if (newStatus === 'cancelled' && existing.status !== 'cancelled') {
+          fireNotify(ctx, env, 'cancel_by_admin', newApt);
+        } else {
+          if (newApt.date !== existing.date || newApt.time !== existing.time) {
+            fireNotify(ctx, env, 'reschedule_by_admin', newApt, { oldDate: existing.date, oldTime: existing.time });
+          }
+          if (newStatus === 'confirmed' && existing.status !== 'confirmed') {
+            fireNotify(ctx, env, 'confirm_by_admin', newApt);
+          }
+          if ((newApt.notes || '') !== (existing.notes || '') && newApt.notes) {
+            fireNotify(ctx, env, 'note_by_admin', newApt);
+          }
+        }
         return Response.json({ success: true }, { headers });
       } catch (e) {
         console.error(e);
@@ -582,7 +623,15 @@ async function handleRequest(request, env) {
       return Response.json({ success: false, error: 'Statut invalide' }, { status: 400, headers });
     }
     try {
+      const existing = await env.DB.prepare('SELECT * FROM appointments WHERE id = ?').bind(id).first();
+      if (!existing) {
+        return Response.json({ success: false, error: 'Rendez-vous introuvable' }, { status: 404, headers });
+      }
       await env.DB.prepare('UPDATE appointments SET status = ? WHERE id = ?').bind(status, id).run();
+      if (status !== existing.status) {
+        if (status === 'confirmed') fireNotify(ctx, env, 'confirm_by_admin', { ...existing, status });
+        else if (status === 'cancelled') fireNotify(ctx, env, 'cancel_by_admin', { ...existing, status });
+      }
       return Response.json({ success: true }, { headers });
     } catch (e) {
       console.error(e);
@@ -597,7 +646,12 @@ async function handleRequest(request, env) {
     }
     const id = url.pathname.split('/').pop();
     try {
+      const existing = await env.DB.prepare('SELECT * FROM appointments WHERE id = ?').bind(id).first();
       await env.DB.prepare('DELETE FROM appointments WHERE id = ?').bind(id).run();
+      // Suppression d'un RDV à venir non annulé → on prévient la cliente (annulation).
+      if (existing && existing.status !== 'cancelled' && `${existing.date}T${existing.time}` >= getParisDateTimeString()) {
+        fireNotify(ctx, env, 'cancel_by_admin', existing);
+      }
       return Response.json({ success: true }, { headers });
     } catch (e) {
       console.error(e);
@@ -812,7 +866,7 @@ async function handleRequest(request, env) {
         appointment.notes, appointment.status, appointment.createdAt
       ).run();
 
-      await notifyOwnerNewAppointment(env, appointment);
+      fireNotify(ctx, env, 'client_booked', { ...appointment, clientId: client.id });
       return Response.json({ success: true, appointment }, { headers });
     } catch (e) {
       console.error(e);
@@ -844,6 +898,7 @@ async function handleRequest(request, env) {
 
       if (body.action === 'cancel') {
         await env.DB.prepare('UPDATE appointments SET status = ? WHERE id = ?').bind('cancelled', id).run();
+        fireNotify(ctx, env, 'cancel_by_client', { ...apt, status: 'cancelled' });
         return Response.json({ success: true }, { headers });
       }
 
@@ -860,6 +915,7 @@ async function handleRequest(request, env) {
 
         await env.DB.prepare('UPDATE appointments SET date = ?, time = ?, status = ? WHERE id = ?')
           .bind(newDate, newTime, 'pending', id).run();
+        fireNotify(ctx, env, 'reschedule_by_client', { ...apt, date: newDate, time: newTime, status: 'pending' }, { oldDate: apt.date, oldTime: apt.time });
         return Response.json({ success: true }, { headers });
       }
 
@@ -870,16 +926,49 @@ async function handleRequest(request, env) {
     }
   }
 
+  // GET /api/push/public-key - clé publique VAPID (pour s'abonner côté navigateur)
+  if (url.pathname === '/api/push/public-key' && request.method === 'GET') {
+    return Response.json({ success: true, key: env.VAPID_PUBLIC_KEY || '' }, { headers });
+  }
+
+  // POST /api/me/push - enregistre un abonnement Web Push pour le client connecté
+  if (url.pathname === '/api/me/push' && request.method === 'POST') {
+    const client = await getClientFromSession(request, env);
+    if (!client) return Response.json({ success: false, error: 'Non autorisé' }, { status: 401, headers });
+    const body = await request.json().catch(() => ({}));
+    try {
+      await saveSubscription(env, { ownerType: 'client', clientId: client.id, endpoint: body.endpoint, p256dh: body.p256dh, auth: body.auth, userAgent: body.userAgent });
+      return Response.json({ success: true }, { headers });
+    } catch (e) {
+      console.error(e);
+      return Response.json({ success: false, error: 'Une erreur interne est survenue.' }, { status: 500, headers });
+    }
+  }
+
+  // DELETE /api/me/push
+  if (url.pathname === '/api/me/push' && request.method === 'DELETE') {
+    const client = await getClientFromSession(request, env);
+    if (!client) return Response.json({ success: false, error: 'Non autorisé' }, { status: 401, headers });
+    const body = await request.json().catch(() => ({}));
+    await deleteSubscription(env, body.endpoint);
+    return Response.json({ success: true }, { headers });
+  }
+
   return Response.json({ success: false, error: 'Not found' }, { status: 404, headers });
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     try {
-      return await handleRequest(request, env);
+      return await handleRequest(request, env, ctx);
     } catch (error) {
       console.error(error);
       return Response.json({ success: false, error: 'Une erreur interne est survenue.' }, { status: 500, headers: corsHeaders(request, env) });
     }
+  },
+
+  // Cron (voir wrangler.toml [triggers]) : rappels J-1 et H-2 aux clients.
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runReminders(env).catch((e) => console.error('scheduled reminders', e)));
   },
 };

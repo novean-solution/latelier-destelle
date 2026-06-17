@@ -1,3 +1,4 @@
 .wrangler/
 _dist/
 node_modules/
+.vapid-keys.txt

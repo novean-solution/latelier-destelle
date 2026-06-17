@@ -5,6 +5,20 @@ compatibility_date = "2024-01-01"
 
 [vars]
 ENVIRONMENT = "production"
+# Clé publique VAPID (non secrète) — sert à signer/identifier les push.
+VAPID_PUBLIC_KEY = "BMsP9uNGQzxPadosXR6ySvNPhVkNW2EoDov5bnYljdeiMKUc5iFDr72DW6yTut_6hdvbgSNtIv6OfXDizWbe618"
+VAPID_SUBJECT = "mailto:contact@novean.fr"
+# Expéditeur des emails (DOIT être un domaine vérifié dans Resend).
+# Stopgap sur novean.fr en attendant le domaine de L'Atelier d'Estelle.
+FROM_EMAIL = "L'Atelier d'Estelle <rdv@novean.fr>"
+
+# Secrets à définir avec `wrangler secret put` (NE PAS mettre ici) :
+#   VAPID_PRIVATE_KEY  (cf. .vapid-keys.txt)
+#   RESEND_API_KEY, ADMIN_TOKEN, OWNER_EMAIL, ALLOWED_ORIGINS
+
+# Rappels automatiques J-1 / H-2 : le cron déclenche scheduled() toutes les 15 min.
+[triggers]
+crons = ["*/15 * * * *"]
 
 [[d1_databases]]
 binding = "DB"
