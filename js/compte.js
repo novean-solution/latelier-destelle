@@ -26,7 +26,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const STATUS_LABELS = { pending: 'En attente', confirmed: 'Confirmé', cancelled: 'Annulé' };
 
 const SERVICES = [
-  { name: 'Rendez-vous d\'informations', duration: 30, price: '20 €' },
+  { name: 'Rendez-vous d\'information', duration: 30, price: '20 €' },
   { name: 'Séance de 5 minutes', duration: 30, price: '20 €' },
   { name: 'Séance de 15 minutes', duration: 30, price: '40 €' },
   { name: 'Séance de 30 minutes', duration: 30, price: '70 €' },

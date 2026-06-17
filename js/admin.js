@@ -3,7 +3,7 @@ const STATUS_LABELS = { pending: 'En attente', confirmed: 'Confirmé', cancelled
 
 const SERVICES = {
   thermolyse: [
-    { name: 'Rendez-vous d\'informations', duration: 30 },
+    { name: 'Rendez-vous d\'information', duration: 30 },
     { name: 'Séance de 15 minutes', duration: 30 },
     { name: 'Séance de 30 minutes', duration: 30 },
     { name: 'Séance de 45 minutes', duration: 60 },
