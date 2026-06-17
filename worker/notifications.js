@@ -98,7 +98,8 @@ function icsFold(line) {
   return parts.join('\r\n ');
 }
 // audience : 'admin' (agenda d'Estelle, infos cliente) ou 'client' (agenda de la cliente).
-function icsEventLines(apt, audience) {
+// alarm2h : pour l'admin, ajoute une alarme H-2 (les clientes ont J-1 + H-2 d'office).
+function icsEventLines(apt, audience, alarm2h) {
   const start = parisInstant(apt.date, apt.time);
   if (!isFinite(start)) return []; // date/heure invalide → on saute (évite un DTSTART corrompu)
   const end = start + (Number(apt.duration) || 30) * 60000;
@@ -136,6 +137,21 @@ function icsEventLines(apt, audience) {
   ];
   const desc = descParts.filter(Boolean).join('\n');
   if (desc) lines.push(`DESCRIPTION:${icsEscape(desc)}`);
+
+  // Alarmes (VALARM) sur les RDV à venir non annulés.
+  const alarms = [];
+  if (apt.status !== 'cancelled') {
+    if (audience === 'admin') {
+      if (alarm2h) alarms.push(['-PT2H', 'Rendez-vous dans 2 h']);
+    } else {
+      alarms.push(['-P1D', 'Rendez-vous demain']);
+      alarms.push(['-PT2H', 'Rendez-vous dans 2 h']);
+    }
+  }
+  for (const [trigger, txt] of alarms) {
+    lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', `TRIGGER:${trigger}`, `DESCRIPTION:${icsEscape(txt)}`, 'END:VALARM');
+  }
+
   lines.push('END:VEVENT');
   return lines;
 }
@@ -148,8 +164,8 @@ export function buildEventICS(apt) {
   // Pièce jointe email envoyée à la cliente → vue 'client'.
   return wrapCalendarLines("L'Atelier d'Estelle", icsEventLines(apt, 'client'));
 }
-export function buildFeedICS(appts, name, audience) {
-  const eventLines = (appts || []).filter((a) => a.status !== 'cancelled').flatMap((a) => icsEventLines(a, audience));
+export function buildFeedICS(appts, name, audience, alarm2h) {
+  const eventLines = (appts || []).filter((a) => a.status !== 'cancelled').flatMap((a) => icsEventLines(a, audience, alarm2h));
   return wrapCalendarLines(name || "L'Atelier d'Estelle", eventLines);
 }
 function toBase64(str) {
@@ -320,7 +336,7 @@ async function pushToAdmin(env, payloadObj) {
 // ---------------------------------------------------------------------------
 // Préférences de notification de l'admin (table settings, singleton)
 // ---------------------------------------------------------------------------
-const DEFAULT_ADMIN_PREFS = { booking: true, cancellation: true, reschedule: true, newClient: true, note: true };
+const DEFAULT_ADMIN_PREFS = { booking: true, cancellation: true, reschedule: true, newClient: true, note: true, reminder2h: true };
 
 export async function getAdminPrefs(env) {
   try {
@@ -337,6 +353,7 @@ export async function setAdminPrefs(env, prefs) {
     reschedule: prefs.reschedule !== false,
     newClient: prefs.newClient !== false,
     note: prefs.note !== false,
+    reminder2h: prefs.reminder2h !== false,
   };
   await env.DB.prepare(
     "INSERT INTO settings (key, value) VALUES ('admin_notif_prefs', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
@@ -426,6 +443,11 @@ function buildMessages(eventType, apt, extra = {}) {
         client: { subject: 'Rappel : votre rendez-vous dans 2 heures', html: emailLayout('Votre rendez-vous approche', `<p>Bonjour ${esc(apt.clientName) || ''},</p><p>Votre rendez-vous a lieu <strong>aujourd'hui à ${esc(apt.time)}</strong>.</p><p style="background:#fff;border-radius:10px;padding:12px 14px;margin:14px 0"><strong>${esc(svc)}</strong>${esc(dur)}</p><p>À tout à l'heure !</p>`), push: { title: `Rappel — RDV à ${apt.time}`, body: `${svc} — aujourd'hui ${apt.time}` } },
         admin: null,
       };
+    case 'reminder_admin_2h':
+      return {
+        client: null,
+        admin: { pref: 'reminder2h', push: { title: '⏰ RDV dans 2 h', body: `${name} — ${apt.time} · ${svc}` }, email: { subject: `Rappel — ${name} à ${apt.time}`, html: emailLayout('Rendez-vous dans 2 heures', `<p>Rappel : rendez-vous <strong>aujourd'hui à ${esc(apt.time)}</strong>.</p><p><strong>${esc(name)}</strong>${apt.clientPhone ? ` — ${esc(apt.clientPhone)}` : ''}<br>${esc(svc)}${esc(dur)}</p>`) } },
+      };
     default:
       return { client: null, admin: null };
   }
@@ -503,9 +525,10 @@ export async function runReminders(env) {
       dayBefore++;
     }
 
-    // Rappel H-2 : dès que le RDV est à moins de 2h, une seule fois.
+    // Rappel H-2 : dès que le RDV est à moins de 2h, une seule fois (cliente + institut).
     if (diff <= 2 * H && diff > 0 && !apt.reminderHourBeforeSentAt) {
-      await notify(env, 'reminder_hour_before', apt);
+      await notify(env, 'reminder_hour_before', apt); // cliente
+      await notify(env, 'reminder_admin_2h', apt);    // institut (selon préférence)
       await env.DB.prepare('UPDATE appointments SET reminderHourBeforeSentAt = ? WHERE id = ?')
         .bind(new Date().toISOString(), apt.id).run().catch(() => {});
       hourBefore++;

@@ -1007,7 +1007,8 @@ async function handleRequest(request, env, ctx) {
     const row = await env.DB.prepare("SELECT value FROM settings WHERE key = 'admin_calendar_token'").first();
     if (!token || !row || row.value !== token) return new Response('Not found', { status: 404 });
     const { results } = await env.DB.prepare('SELECT * FROM appointments WHERE date >= ? ORDER BY date, time').bind(icsCutoff).all();
-    const ics = buildFeedICS(results || [], "Agenda — L'Atelier d'Estelle", 'admin');
+    const prefs = await getAdminPrefs(env);
+    const ics = buildFeedICS(results || [], "Agenda — L'Atelier d'Estelle", 'admin', prefs.reminder2h !== false);
     return new Response(ics, { headers: { 'Content-Type': 'text/calendar; charset=utf-8', 'Cache-Control': 'no-cache' } });
   }
 

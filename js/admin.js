@@ -755,6 +755,7 @@ async function loadPrefs() {
     document.getElementById('prefReschedule').checked = p.reschedule !== false;
     document.getElementById('prefNewClient').checked = p.newClient !== false;
     document.getElementById('prefNote').checked = p.note !== false;
+    document.getElementById('prefReminder2h').checked = p.reminder2h !== false;
   } catch (e) { console.error(e); }
 }
 
@@ -780,6 +781,7 @@ async function savePrefs() {
       reschedule: document.getElementById('prefReschedule').checked,
       newClient: document.getElementById('prefNewClient').checked,
       note: document.getElementById('prefNote').checked,
+      reminder2h: document.getElementById('prefReminder2h').checked,
     }) });
     state.textContent = '✓ Préférences enregistrées.';
   } catch (e) { state.textContent = 'Erreur lors de l\'enregistrement.'; }
